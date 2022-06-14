@@ -28,7 +28,7 @@ srun -N 1 -n 1 python training_script.py \
 --lr-inverse-dim \
 --lr-factor $3 \
 --dropout $4 \
---checkpoint-path /work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/IWSLT_sample$1_depth$2_lr$3_dropout$4
+--checkpoint-path /work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample$1_depth$2_lr$3_dropout$4
 
 wait
 date
