@@ -18,7 +18,8 @@
 
 for samples in 160000
 do
-    for depth in 6
+    #for depth in 6
+    for depth in 4 5 7 8
     do
         for lr in 0.5 0.75 1.0 1.5 2.0
         do
