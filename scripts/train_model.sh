@@ -27,8 +27,11 @@ srun -N 1 -n 1 python training_script.py \
 --num-layers $2 \
 --lr-inverse-dim \
 --lr-factor $3 \
+--max-gradient-steps 800000 \
 --dropout $4 \
---checkpoint-path /work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample$1_depth$2_lr$3_dropout$4
+--checkpoint-path /work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample$1_depth$2_lr$3_dropout$4 \
+1>/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample$1_depth$2_lr$3_dropout$4/log_0.txt \
+2>/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample$1_depth$2_lr$3_dropout$4/err_0.txt
 
 wait
 date
