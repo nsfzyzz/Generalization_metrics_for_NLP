@@ -8,7 +8,7 @@ from models.definitions.transformer_model import Transformer
 from utils.data_utils import get_data_loaders
 from utils.constants import *
 from utils.utils import calculate_bleu_score
-# import wandb
+import wandb
 from measures import get_all_measures
 from training_script import get_train_val_loop
 import time
@@ -69,7 +69,7 @@ def main(args):
     baseline_transformer_init.load_state_dict(ckpt["state_dict"])
     baseline_transformer_init.eval()
 
-    # wandb.init(name = args.ckpt + '_eval_measure')
+    wandb.init(name = args.ckpt + '_eval_measure')
 
     final_evals = {}
     for epoch in args.epochs:
@@ -152,7 +152,7 @@ def main(args):
 
             all_complexities.update(all_complexities_ww)
 
-        # wandb.log(all_complexities)
+        wandb.log(all_complexities)
 
     if args.test_robust_measures or args.test_bleu:
         pickle.dump(final_evals, open( os.path.join(args.ckpt, args.result_suffix), "wb" ) )
