@@ -52,9 +52,11 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint_dir", type=str, default="")
     parser.add_argument("--max_batches", type=int, default=200)
     parser.add_argument("--seed", type=int, default=24)
-    parser.add_argument("--dataset", type=str, default='WMT')
+    parser.add_argument("--dataset", type=str, default='IWSLT')
 
     args = parser.parse_args()
+    
+    print(f"DATASET: {args.dataset}")
 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     

@@ -28,10 +28,10 @@ do
         #for lr in 0.5 0.75 1.0 1.5 2.0
         for lr in 0.5
         do
-        # order is [checkpoint dir] [max_batches]
+        # order is [checkpoint dir] [max_batches] [dataset]
         sbatch scripts/eval_bleu_loss.sh \
         "/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample${samples}_depth${depth}_lr${lr}_dropout0.1" \
-        200
+        200 WMT
         done
     done
 done
