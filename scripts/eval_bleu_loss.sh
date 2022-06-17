@@ -7,7 +7,7 @@
 #SBATCH --nodelist=ace      # if you need specific nodes
 ##SBATCH --exclude=manchester,como,pavia,luigi,zanino,steropes,atlas,blaze,flaminio,freddie,r[1-6,8-16],havoc
 #SBATCH -t 1-00:00          # time requested (D-HH:MM)
-#SBATCH -D /home/eecs/rkunani/NLP_metrics      # working directory
+#SBATCH -D /data/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson      # working directory
 #SBATCH -o slurm_logs/slurm.%N.%j..out # STDOUT
 #SBATCH -e slurm_logs/slurm.%N.%j..err # STDERR
 pwd
