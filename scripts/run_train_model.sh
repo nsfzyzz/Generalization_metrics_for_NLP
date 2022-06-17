@@ -16,9 +16,9 @@
 
 # Training experiments for WMT14
 
-for samples in 320000
+for samples in 1280000
 do
-    for depth in 4 5 6 7 8    
+    for depth in 6 7    
     do
 	for lr in 0.5 0.75 1.0 1.5 2.0
         do

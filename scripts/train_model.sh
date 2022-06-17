@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8   # number of cores per task
 #SBATCH --gres=gpu:1        # number of GPUs (should match -n)
 ##SBATCH --nodelist=ace,manchester,bombe,como,pavia,luigi,zanino    # if you need specific nodes
-#SBATCH --nodelist=manchester
+#SBATCH --nodelist=ace
 ##SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas
 #SBATCH -t 1-00:00          # time requested (D-HH:MM)
 #SBATCH -D /data/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson
@@ -31,7 +31,7 @@ srun -N 1 -n 1 python training_script.py \
 --num-layers $2 \
 --lr-inverse-dim \
 --lr-factor $3 \
---max-gradient-steps 800000 \
+--max-gradient-steps 1000000 \
 --dropout $4 \
 --checkpoint-path $CKPTPATH \
 1>$CKPTPATH/log_0.txt \

@@ -30,7 +30,7 @@ global_train_step, global_val_step = [0, 0]
 #writer = SummaryWriter()  # (tensorboard) writer will output to ./runs/ directory by default
 best_val_loss = None
 #import weightwatcher as ww
-# import wandb
+import wandb
 
 # Simple decorator function so that I don't have to pass these arguments every time I call get_train_val_loop
 def get_train_val_loop(baseline_transformer, custom_lr_optimizer, kl_div_loss, label_smoothing, pad_token_id, time_start, training_config, save_ckpt=True):
@@ -119,7 +119,7 @@ def get_train_val_loop(baseline_transformer, custom_lr_optimizer, kl_div_loss, l
             print(f'Validation loss at epoch={epoch + 1} is {validation_loss}')
             print('-'*30)
 
-            # wandb.log({'Validation_loss': validation_loss})
+            wandb.log({'Validation_loss': validation_loss})
             
             if save_ckpt and (not best_val_loss or best_val_loss > validation_loss):
                 best_val_loss = validation_loss
@@ -198,7 +198,7 @@ def train_transformer(training_config):
                 lr_factor = args.lr_factor
             )
 
-    # wandb.init(name = args.checkpoint_path + '_train')
+    wandb.init(name = args.checkpoint_path + '_train')
 
     # The decorator function makes things cleaner since there is a lot of redundancy between the train and val loops
     train_val_loop = get_train_val_loop(baseline_transformer, custom_lr_optimizer, kl_div_loss, label_smoothing, pad_token_id, time.time(), training_config)
@@ -218,7 +218,7 @@ def train_transformer(training_config):
         print('-'*30)
         print(f'BLEU score at epoch=0 is {bleu_score}')
         print('-'*30)
-        # wandb.log({'BLEU_score': bleu_score})
+        wandb.log({'BLEU_score': bleu_score})
 
 
     # Step 4: Start the training
@@ -242,7 +242,7 @@ def train_transformer(training_config):
             print('-'*30)
             print(f'BLEU score at epoch={epoch + 1} is {bleu_score}')
             print('-'*30)
-            # wandb.log({'BLEU_score': bleu_score})
+            wandb.log({'BLEU_score': bleu_score})
             
         if global_train_step > args.max_gradient_steps:
             print("Enough training! Saving model and exit.")
