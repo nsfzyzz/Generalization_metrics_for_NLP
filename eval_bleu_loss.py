@@ -52,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint_dir", type=str, default="")
     parser.add_argument("--max_batches", type=int, default=200)
     parser.add_argument("--seed", type=int, default=24)
+    parser.add_argument("--dataset", type=str, default='WMT')
 
     args = parser.parse_args()
 
@@ -65,11 +66,18 @@ if __name__ == "__main__":
     DEPTH = re.search("depth(\d+)", args.checkpoint_dir)
     DEPTH = int(DEPTH.group(1))
     print(f"DEPTH: {DEPTH}")
-
+    
+    if args.dataset == 'WMT':
+        id_data, ood_data = DatasetType.WMT14.name, DatasetType.IWSLT.name
+    elif args.dataset == 'IWSLT':
+        ood_data, id_data = DatasetType.WMT14.name, DatasetType.IWSLT.name
+    else:
+        raise NameError('Dataset not implemented yet.')
+    
     ood_train_token_ids_loader, ood_val_token_ids_loader, _, _ = get_data_loaders(
         DATA_DIR_PATH,
         LanguageDirection.G2E.name,
-        DatasetType.WMT14.name,     # OOD is always WMT
+        ood_data,
         1500,
         DEVICE,
         subsampling=True,
@@ -80,7 +88,7 @@ if __name__ == "__main__":
     id_train_token_ids_loader, id_val_token_ids_loader, src_field_processor, trg_field_processor = get_data_loaders(
         DATA_DIR_PATH,
         LanguageDirection.G2E.name,
-        DatasetType.IWSLT.name,     # ID is always IWSLT
+        id_data,
         1500,
         DEVICE,
         subsampling=True,
