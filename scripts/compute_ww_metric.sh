@@ -7,7 +7,7 @@
 #SBATCH --nodelist=havoc    # if you need specific nodes
 ##SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes
 #SBATCH -t 1-00:00          # time requested (D-HH:MM)
-#SBATCH -D /home/eecs/rkunani/NLP_metrics      # working directory
+#SBATCH -D /data/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson      # working directory
 #SBATCH -o slurm_logs/slurm.%N.%j..out # STDOUT
 #SBATCH -e slurm_logs/slurm.%N.%j..err # STDERR
 pwd
@@ -15,7 +15,8 @@ hostname
 date
 echo starting job...
 source ~/.bashrc
-conda activate pytorch-transformer
+conda activate ww
+source normalize_powerlaw.sh
 export PYTHONUNBUFFERED=1
 
 export OMP_NUM_THREADS=1

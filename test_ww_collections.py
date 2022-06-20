@@ -6,6 +6,7 @@ import pickle
 from models.definitions.transformer_model import Transformer
 from utils.data_utils import get_data_loaders
 from utils.constants import *
+import wandb
 
 def main(args):
     
@@ -40,6 +41,8 @@ def main(args):
     # Compute metrics for all epochs
     ww_metrics = {}     # key: epoch, value: results dict
     EPOCHS = 20
+    wandb.init(name = args.ckpt + '_ww')
+
     for epoch in range(1, EPOCHS+1):
         print(f"\nEPOCH {epoch}")
         ckpt = torch.load(os.path.join(args.ckpt,f"net_epoch_{epoch}.ckpt"), map_location='cpu')
@@ -60,6 +63,8 @@ def main(args):
             results = {'details':details, 'summary':summary}
             ww_metrics[epoch] = results
 
+            wandb.log(summary)
+
         # Don't use this
         else:
             if not args.heuMax:
@@ -70,6 +75,7 @@ def main(args):
                         savefig=args.result, continuous_estimate=float(args.continuous_estimate), 
                         heuristic_xmax=True, heuristic_xmax_factor=args.heuMax_factor, fix_finger_histogram=args.fix_finger_histogram)
             summary = watcher.get_summary(details)
+
             results = {'details':details, 'summary':summary, 'alphas': alphas_results, 'Ds': Ds_results}
             ww_metrics[epoch] = results
     
@@ -104,7 +110,8 @@ if __name__ == "__main__":
     #parser.add_argument("--negative-lambda", action='store_true', default=False)
 
     args = parser.parse_args()
-    
+    print(ww.__file__)
+
     print("Arguments for the experiment.")
     for arg in vars(args):
         print(arg, getattr(args, arg))
