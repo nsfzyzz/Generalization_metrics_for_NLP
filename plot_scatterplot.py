@@ -22,7 +22,9 @@ def get_metric_bleu_df(experiment):
 
     for metric, metric_file in METRIC_FILES.items():
         metric_vals = []
-
+        
+        print("Retrieving the metric:")
+        print(metric)
         # Special cases: PL vs TPL alpha
         if metric in ['PL_alpha', 'TPL_alpha']:
             if metric == 'PL_alpha':
@@ -33,7 +35,14 @@ def get_metric_bleu_df(experiment):
                 d = pickle.load(file)
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['alpha'].mean())     # averaging over layers
-        
+                
+        elif metric == 'exponent':
+            FILE = os.path.join(experiment, "results.pkl")
+            with open(FILE, 'rb') as file:
+                d = pickle.load(file)
+            for epoch in epochs:
+                metric_vals.append(d[epoch]['details']['exponent'].mean())     # averaging over layers
+                
         elif metric_file == 'robust':
             # Get from robust_measures.pkl
             FILE = os.path.join(experiment, "robust_measures.pkl")
@@ -113,7 +122,7 @@ if __name__ == '__main__':
     df = pd.DataFrame.from_records(records)
     
     ### Make scatterplots ###
-    SAVE_DIR = f"plots/PL/{args.metric}"
+    SAVE_DIR = f"plots/TPL/{args.metric}"
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
 
