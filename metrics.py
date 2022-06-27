@@ -33,8 +33,8 @@ METRIC_FILES = {
     'mp_softrank': 'ww',
     'stable_rank': 'ww',
     'PL_alpha': 'ww',
-    # 'TPL_alpha': 'ww',
-    # 'exponent': 'ww',
+    'TPL_alpha': 'ww',
+    'exponent': 'ww',
     # 'exp_dist_exponent': 'ww',     # missing
     'KS_distance': 'ww',
     'tail_mean_vec_entropy': 'ww',
