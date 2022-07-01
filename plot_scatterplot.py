@@ -107,11 +107,12 @@ if __name__ == '__main__':
     records = []
     for experiment in EXPERIMENTS:
         metric_bleu_df = get_metric_bleu_df(experiment)
-        # Get the final epoch's BLEU/metric
+        # Get the last three epochs' BLEU/metric
+        average_length = 3
         record = {
-            'id_bleu': metric_bleu_df.iloc[-1]['id_bleu'],
-            'ood_bleu': metric_bleu_df.iloc[-1]['ood_bleu'],
-            f'{args.metric}': metric_bleu_df.iloc[-1][f'{args.metric}'],
+            'id_bleu': sum([metric_bleu_df.iloc[-x]['id_bleu'] for x in range(1,1+average_length)])/average_length,
+            'ood_bleu': sum([metric_bleu_df.iloc[-x]['ood_bleu'] for x in range(1,1+average_length)])/average_length,
+            f'{args.metric}': sum([metric_bleu_df.iloc[-x][f'{args.metric}'] for x in range(1,1+average_length)])/average_length,
             'sample': re.search("sample(\d+)", experiment).group(1),
             'depth': re.search("depth(\d+)", experiment).group(1),
             'lr': re.search("lr([\d.]+)", experiment).group(1),
