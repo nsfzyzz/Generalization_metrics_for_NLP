@@ -2,7 +2,7 @@
 #SBATCH -p rise             # partition (queue)
 #SBATCH -N 1                # number of nodes requested
 #SBATCH -n 1                # number of tasks (i.e. processes)
-#SBATCH --cpus-per-task=2   # number of cores per task
+#SBATCH --cpus-per-task=16   # number of cores per task
 ##SBATCH --gres=gpu:1        # number of GPUs (should match -n)
 #SBATCH --nodelist=havoc    # if you need specific nodes
 ##SBATCH --exclude=como,manchester,blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas
@@ -22,7 +22,8 @@ export OMP_NUM_THREADS=1
 python plot_scatterplot.py \
 --metric $1 \
 --bleu_type $2 \
---group $3
+--group $3 \
+--distribution $4
 
 wait
 date
