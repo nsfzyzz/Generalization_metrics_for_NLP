@@ -6,7 +6,7 @@
 ##SBATCH --gres=gpu:1        # number of GPUs (should match -n)
 #SBATCH --nodelist=havoc    # if you need specific nodes
 ##SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes
-#SBATCH -t 2-00:00          # time requested (D-HH:MM)
+#SBATCH -t 1-00:00          # time requested (D-HH:MM)
 #SBATCH -D /data/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson      # working directory
 #SBATCH -o slurm_logs/slurm.%N.%j..out # STDOUT
 #SBATCH -e slurm_logs/slurm.%N.%j..err # STDERR
@@ -23,14 +23,14 @@ export OMP_NUM_THREADS=1
 python test_ww_collections.py \
 $1 \
 $2 \
---result-suffix "results.pkl" \
+--result-suffix "results_original_alpha.pkl" \
 --width 512 \
 --dataset $5 \
 --num-samples $3 \
 --num-layers $4 \
 --mp-fit \
 --randomize \
---distribution "truncated_power_law"
+--distribution "power_law"
 
 wait
 date
