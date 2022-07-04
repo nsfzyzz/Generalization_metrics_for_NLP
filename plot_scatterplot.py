@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # TODO: Move into a utils file
-def get_metric_bleu_df(experiment):
+def get_metric_bleu_df(experiment, distribution):
     '''
     Constructs a DataFrame of length num_epochs.
     The columns are [epoch, id_bleu, ood_bleu, metric1, metric2, ...]
@@ -22,7 +22,9 @@ def get_metric_bleu_df(experiment):
 
     for metric, metric_file in METRIC_FILES.items():
         metric_vals = []
-
+        
+        #print("Retrieving the metric:")
+        #print(metric)
         # Special cases: PL vs TPL alpha
         if metric in ['PL_alpha', 'TPL_alpha']:
             if metric == 'PL_alpha':
@@ -33,7 +35,14 @@ def get_metric_bleu_df(experiment):
                 d = pickle.load(file)
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['alpha'].mean())     # averaging over layers
-        
+                
+        elif metric == 'exponent':
+            FILE = os.path.join(experiment, "results.pkl")
+            with open(FILE, 'rb') as file:
+                d = pickle.load(file)
+            for epoch in epochs:
+                metric_vals.append(d[epoch]['details']['exponent'].mean())     # averaging over layers
+                
         elif metric_file == 'robust':
             # Get from robust_measures.pkl
             FILE = os.path.join(experiment, "robust_measures.pkl")
@@ -48,7 +57,12 @@ def get_metric_bleu_df(experiment):
         
         elif metric_file == 'ww':
             # Get from results.pkl
-            FILE = os.path.join(experiment, "results_original_alpha.pkl")
+            if distribution == "PL":
+                FILE = os.path.join(experiment, "results_original_alpha.pkl")
+            elif distribution == "TPL":
+                FILE = os.path.join(experiment, "results.pkl")
+            else:
+                raise ValueError('Unknown distribution.')
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
             for epoch in epochs:
@@ -64,7 +78,7 @@ def get_metric_bleu_df(experiment):
         metrics[metric] = metric_vals
     
     ### Get BLEU scores ###
-    id_bleu_scores, ood_bleu_scores = [], []
+    id_bleu_scores, ood_bleu_scores, id_bleu_gaps, id_bleu_train_scores, id_loss_gaps = [], [], [], [], []
     EPOCH = 1   # Epochs are numbered 1-20
     FILE = os.path.join(experiment, "bleu_loss.jsonl")
     with open(FILE, "rb") as file:
@@ -72,11 +86,16 @@ def get_metric_bleu_df(experiment):
             d = json.loads(line)
             id_bleu_scores.append(d[f'epoch{EPOCH}_id_bleu_score'] * 100)
             ood_bleu_scores.append(d[f'epoch{EPOCH}_ood_bleu_score'] * 100)
+            id_bleu_train_scores.append(d[f'epoch{EPOCH}_id_train_bleu_score'] * 100)
+            id_bleu_gaps.append((d[f'epoch{EPOCH}_id_train_bleu_score'] - d[f'epoch{EPOCH}_id_bleu_score'])* 100)
+            id_loss_gaps.append(d[f'epoch{EPOCH}_id_val_loss'] - d[f'epoch{EPOCH}_id_train_loss'])
+            
             EPOCH += 1
     
     ### Construct the DataFrame ###
     data = {
-        'epoch': epochs, 'id_bleu': id_bleu_scores, 'ood_bleu': ood_bleu_scores
+        'epoch': epochs, 'id_bleu': id_bleu_scores, 'ood_bleu': ood_bleu_scores, 
+        'id_bleu_gap': id_bleu_gaps, 'id_bleu_train': id_bleu_train_scores, 'id_loss_gap': id_loss_gaps,
     }
     data.update(metrics)
     df = pd.DataFrame(data=data)
@@ -87,22 +106,28 @@ if __name__ == '__main__':
     parser.add_argument("--metric", type=str, default="")
     parser.add_argument("--bleu_type", type=str)
     parser.add_argument("--group", type=str, default="")
+    parser.add_argument("--distribution", type=str, default="PL")
 
     args = parser.parse_args()
     assert args.metric in METRIC_FILES.keys()
-    assert args.bleu_type in ["id_bleu", "ood_bleu"]
+    assert args.bleu_type in ["id_bleu", "ood_bleu", "id_bleu_gap", "id_bleu_train", "id_loss_gap"]
     assert args.group in ["sample", "depth", "lr"]
+    assert args.distribution in ["PL", "TPL"]
 
     # Construct a DataFrame of length num_experiments
     # The columns are [id_bleu, ood_bleu, metric, sample, depth, lr, dropout]
     records = []
     for experiment in EXPERIMENTS:
-        metric_bleu_df = get_metric_bleu_df(experiment)
-        # Get the final epoch's BLEU/metric
+        metric_bleu_df = get_metric_bleu_df(experiment, args.distribution)
+        # Get the last three epochs' BLEU/metric
+        average_length = 3
         record = {
-            'id_bleu': metric_bleu_df.iloc[-1]['id_bleu'],
-            'ood_bleu': metric_bleu_df.iloc[-1]['ood_bleu'],
-            f'{args.metric}': metric_bleu_df.iloc[-1][f'{args.metric}'],
+            'id_bleu': sum([metric_bleu_df.iloc[-x]['id_bleu'] for x in range(1,1+average_length)])/average_length,
+            'id_bleu_train': sum([metric_bleu_df.iloc[-x]['id_bleu_train'] for x in range(1,1+average_length)])/average_length,
+            'id_bleu_gap': sum([metric_bleu_df.iloc[-x]['id_bleu_gap'] for x in range(1,1+average_length)])/average_length,
+            'id_loss_gap': sum([metric_bleu_df.iloc[-x]['id_loss_gap'] for x in range(1,1+average_length)])/average_length,
+            'ood_bleu': sum([metric_bleu_df.iloc[-x]['ood_bleu'] for x in range(1,1+average_length)])/average_length,
+            f'{args.metric}': sum([metric_bleu_df.iloc[-x][f'{args.metric}'] for x in range(1,1+average_length)])/average_length,
             'sample': re.search("sample(\d+)", experiment).group(1),
             'depth': re.search("depth(\d+)", experiment).group(1),
             'lr': re.search("lr([\d.]+)", experiment).group(1),
@@ -113,7 +138,7 @@ if __name__ == '__main__':
     df = pd.DataFrame.from_records(records)
     
     ### Make scatterplots ###
-    SAVE_DIR = f"plots/PL/{args.metric}"
+    SAVE_DIR = f"plots/{args.distribution}/{args.metric}"
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
 
