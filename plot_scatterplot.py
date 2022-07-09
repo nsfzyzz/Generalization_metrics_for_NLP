@@ -1,4 +1,5 @@
-from experiments import EXPERIMENTS
+#from experiments import EXPERIMENTS
+from experiments_single_depth import EXPERIMENTS
 from metrics import METRIC_FILES
 import argparse, pickle, os, json, re
 import pandas as pd
@@ -6,8 +7,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+def adjust_measure(metric, val, dataset_size):
+    
+    if metric.startswith('LOG_'):
+        return 2*val + np.log(dataset_size)
+        #return 0.5 * (value - np.log(m))
+    elif 'CKA' in metric or 'TRUE_MARGIN' in metric:
+        return val
+    else:
+        #print(val)
+        #print(dataset_size)
+        return (val**2)*dataset_size
+        #return np.sqrt(value / m)
+
 # TODO: Move into a utils file
-def get_metric_bleu_df(experiment, distribution):
+def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
     '''
     Constructs a DataFrame of length num_epochs.
     The columns are [epoch, id_bleu, ood_bleu, metric1, metric2, ...]
@@ -42,18 +56,6 @@ def get_metric_bleu_df(experiment, distribution):
                 d = pickle.load(file)
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['exponent'].mean())     # averaging over layers
-                
-        elif metric_file == 'robust':
-            # Get from robust_measures.pkl
-            FILE = os.path.join(experiment, "robust_measures.pkl")
-            with open(FILE, 'rb') as file:
-                d = pickle.load(file)
-            for epoch in epochs:
-                if metric in d[epoch]:
-                    metric_vals.append(d[epoch][metric])
-                else:
-                    print(f"{FILE} missing {metric}")
-                    metric_vals.append(np.nan)
         
         elif metric_file == 'ww':
             # Get from results.pkl
@@ -71,6 +73,25 @@ def get_metric_bleu_df(experiment, distribution):
                     metric_vals.append(d[epoch]['details']['D'].mean())     # averaging over layers
                 elif metric in d[epoch]['details']:
                     metric_vals.append(d[epoch]['details'][metric].mean())     # averaging over layers
+                else:
+                    print(f"{FILE} missing {metric}")
+                    metric_vals.append(np.nan)
+                    
+        elif metric_file == 'robust':
+            # Get from robust_measures.pkl
+            FILE = os.path.join(experiment, "robust_measures.pkl")
+            with open(FILE, 'rb') as file:
+                d = pickle.load(file)
+            for epoch in epochs:
+                if metric in d[epoch]:
+                    _val = d[epoch][metric]
+                    if adjust_measures_back:
+                        # Reverse the effect of dataset_size
+                        dataset_size = int(re.search("sample(\d+)", experiment).group(1))
+                        _val_adjusted = adjust_measure(metric, _val, dataset_size)
+                        metric_vals.append(_val_adjusted)
+                    else:
+                        metric_vals.append(_val)
                 else:
                     print(f"{FILE} missing {metric}")
                     metric_vals.append(np.nan)
@@ -107,6 +128,7 @@ if __name__ == '__main__':
     parser.add_argument("--bleu_type", type=str)
     parser.add_argument("--group", type=str, default="")
     parser.add_argument("--distribution", type=str, default="PL")
+    parser.add_argument("--adjust_measures_back", dest='adjust_measures_back', action='store_true', help='adjust the measure back using the dataset size (default: off)')
 
     args = parser.parse_args()
     assert args.metric in METRIC_FILES.keys()
@@ -118,7 +140,7 @@ if __name__ == '__main__':
     # The columns are [id_bleu, ood_bleu, metric, sample, depth, lr, dropout]
     records = []
     for experiment in EXPERIMENTS:
-        metric_bleu_df = get_metric_bleu_df(experiment, args.distribution)
+        metric_bleu_df = get_metric_bleu_df(experiment, args.distribution, args.adjust_measures_back)
         # Get the last three epochs' BLEU/metric
         average_length = 3
         record = {
@@ -137,8 +159,14 @@ if __name__ == '__main__':
     
     df = pd.DataFrame.from_records(records)
     
+    plot_metric_name = args.metric
+    if plot_metric_name == 'exponent':
+        plot_metric_name = 'E_TPL_lambda'
+    elif plot_metric_name == 'TPL_alpha':
+        plot_metric_name = 'E_TPL_beta'
+    
     ### Make scatterplots ###
-    SAVE_DIR = f"plots/{args.distribution}/{args.metric}"
+    SAVE_DIR = f"plots/{args.distribution}/{plot_metric_name}"
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
 
@@ -151,9 +179,10 @@ if __name__ == '__main__':
         hue=f'{args.group}',
         fit_reg=False,
     )
-    plt.title(f"{args.metric} vs. {args.bleu_type}")
+    plt.xlabel(plot_metric_name)
+    plt.title(f"{plot_metric_name} vs. {args.bleu_type}")
     plt.savefig(
-        os.path.join(SAVE_DIR, f"{args.bleu_type}_{args.metric}_{args.group}"),
+        os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}"),
         bbox_inches='tight',
         dpi=150,
     )
@@ -177,9 +206,10 @@ if __name__ == '__main__':
         ci=None,
         color='gray',
     )
-    plt.title(f"{args.metric} vs. {args.bleu_type}")
+    plt.xlabel(plot_metric_name)
+    plt.title(f"{plot_metric_name} vs. {args.bleu_type}")
     plt.savefig(
-        os.path.join(SAVE_DIR, f"{args.bleu_type}_{args.metric}_{args.group}_simpson"),
+        os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}_simpson"),
         bbox_inches='tight',
         dpi=150,
     )
@@ -193,11 +223,12 @@ if __name__ == '__main__':
         hue=f'{args.group}',
         fit_reg=False,
     )
+    plt.xlabel(plot_metric_name)
     plt.xlim([xmin,xmax])
     plt.ylim([ymin,ymax])
-    plt.title(f"{args.metric} vs. {args.bleu_type}\nbest performing model in each group")
+    plt.title(f"{plot_metric_name} vs. {args.bleu_type}\nbest performing model in each group")
     plt.savefig(
-        os.path.join(SAVE_DIR, f"{args.bleu_type}_{args.metric}_{args.group}_best"),
+        os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}_best"),
         bbox_inches='tight',
         dpi=150,
     )

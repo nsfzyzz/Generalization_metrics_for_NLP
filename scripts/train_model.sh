@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8   # number of cores per task
 #SBATCH --gres=gpu:1        # number of GPUs (should match -n)
 ##SBATCH --nodelist=ace,manchester,bombe,como,pavia,luigi,zanino    # if you need specific nodes
-#SBATCH --nodelist=ace
+#SBATCH --nodelist=bombe
 ##SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas
 #SBATCH -t 1-00:00          # time requested (D-HH:MM)
 #SBATCH -D /data/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson
