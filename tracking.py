@@ -18,7 +18,6 @@ import logging
 import itertools
 import argparse
 
-
 parser = argparse.ArgumentParser(description='PyTorch File Tracking Available GPUs')
 parser.add_argument('--target-gpus', type=int, nargs='+', default=[0,1,2,3,4,5,6,7],
                     help='Which GPUs can you use?')
@@ -29,6 +28,8 @@ parser.add_argument('--wait-cluster', dest='wait_cluster', default = False, acti
 parser.add_argument('--command-file', type=str, default = './command_list_files/command_list.txt', help='The commands to run')
 parser.add_argument('--gpu-query-time', type=int, default = 10)
 parser.add_argument('--submit-wait-time', type=int, default = 10)
+parser.add_argument('--one-task-per-gpu', dest='one_task_per_gpu', default = False, action='store_true',
+                        help='Do we enforce one task per gpu?')
 
 args = parser.parse_args()
 
@@ -53,7 +54,7 @@ else:
     
 target_GPUs = args.target_gpus
 num_target_GPUs = len(target_GPUs)
-
+used_GPUs = set()
 
 def num_available_GPUs(gpus):
     
@@ -92,7 +93,10 @@ def get_free_gpu_indices():
         for i, stat in enumerate(stats.gpus):
             memory_used = stat['memory.used']
             if memory_used < GPU_MEMORY_THRESHOLD and i in target_GPUs:
-                return i
+                if not args.one_task_per_gpu:
+                    return i
+                elif f'{i}' not in used_GPUs:
+                    return i
 
         logger.info("Waiting on GPUs")
         time.sleep(args.gpu_query_time)
@@ -144,13 +148,18 @@ class ChildThread(threading.Thread):
         bash_command = self.bash_command
 
         logger.info(f'executing {bash_command} on GPU: {self.cuda_device}')
+        used_GPUs.add(f'{self.cuda_device}')
+        logger.info(f"Currently used GPUs: {used_GPUs}")
         # ACTIVATE
         os.system(bash_command)
         import time
         import random
+        
         time.sleep(random.random() % 5)
-
-        logger.info("Finishing " + self.name)      
+        
+        logger.info("Finishing " + self.name)
+        used_GPUs.remove(f'{self.cuda_device}')
+        logger.info(f"Removing {self.cuda_device} from used GPUs. Currently used GPUs: {used_GPUs}")
 
 
 BASH_COMMAND_LIST = []
@@ -158,7 +167,10 @@ BASH_COMMAND_LIST = []
 with open(args.command_file) as f:
     lines = f.readlines()
     for line in lines:
-        BASH_COMMAND_LIST.append(line)
+        if line and not line.isspace(): # Sometimes the script contains rows that are completely empty
+            BASH_COMMAND_LIST.append(line)
+        else:
+            logger.info("Skipping empty lines in the command list.")
 
 
 # Create new threads
