@@ -16,15 +16,20 @@
 
 # Training experiments for WMT14
 
-for samples in 160000 320000 640000 1280000
+for samples in 160000 320000 640000 1280000 2560000
 do
-    for depth in 4 5 6 7 8
+    #for depth in 8 7 6 5 4
+    for depth in 6
     do
-    for lr in 0.625 0.375
+        #for lr in 0.0625 0.125 0.25 0.375 0.5 0.625 0.75 1.0 1.5 2.0
+        #for lr in 0.0625 0.125 0.25 0.375 0.5
+        #for lr in 0.625 0.75 1.0 1.5 2.0
+        for lr in 0.0625
         do
         # order is [num_samples] [depth] [lr_factor] [dropout]
         #mkdir /work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample"$samples"_depth"$depth"_lr"$lr"_dropout0.1 
-        sbatch scripts/train_model.sh $samples $depth $lr 0.1
+        #sbatch scripts/train_model.sh $samples $depth $lr 0.1
+        sbatch scripts/train_model.sh $samples $depth $lr 0.1 40
         done
     done
 done

@@ -21,7 +21,8 @@ export PYTHONUNBUFFERED=1
 srun -N 1 -n 1 python eval_bleu_loss.py \
 --checkpoint_dir $1 \
 --max_batches $2 \
---dataset $3
+--dataset $3 \
+--num_epochs $4
 
 wait
 date

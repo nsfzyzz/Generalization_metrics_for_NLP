@@ -30,7 +30,8 @@ $2 \
 --num-layers $4 \
 --mp-fit \
 --randomize \
---distribution "power_law"
+--distribution "power_law" \
+--num-epochs $6
 
 wait
 date

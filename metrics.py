@@ -22,10 +22,10 @@ METRIC_FILES = {
     'PACBAYES_MAG_INIT': 'robust',
     'PACBAYES_MAG_ORIG': 'robust',
     'PACBAYES_MAG_FLATNESS': 'robust',
-    # 'W_CKA': 'robust',
+    'W_CKA': 'robust',
     # 'FRO_OVER_SPEC': 'robust',
-    # 'LOG_SPEC_INIT_MAIN': 'robust',
-    # 'LOG_SPEC_ORIG_MAIN': 'robust',
+    'LOG_SPEC_INIT_MAIN': 'robust',
+    'LOG_SPEC_ORIG_MAIN': 'robust',
 
     # ww
     'log_norm': 'ww',
@@ -43,4 +43,9 @@ METRIC_FILES = {
     'rand_distance': 'ww',
     'alpha_weighted': 'ww',
     'log_alpha_norm': 'ww',
+    #'logdet_tpl_per_layer': 'ww',
+    'exponent_adjusted': 'ww',
+    
+    # combined metrics calculated from existing ones
+    #'logdet_tpl': 'combine'
 }

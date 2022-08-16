@@ -30,7 +30,8 @@ $2 \
 --num-layers $4 \
 --mp-fit \
 --randomize \
---distribution "truncated_power_law"
+--distribution "truncated_power_law" \
+--num-epochs $6
 
 wait
 date

@@ -64,7 +64,7 @@ def main(args):
             dropout_probability=BASELINE_MODEL_DROPOUT_PROB
         ).to(device)
 
-    ckpt_epoch = os.path.join(args.ckpt, f"net_epoch_{args.epochs[0]}.ckpt")
+    ckpt_epoch = os.path.join(args.ckpt, f"net_epoch_{args.starting_epoch}.ckpt")
     ckpt = torch.load(ckpt_epoch, map_location='cpu')
     baseline_transformer_init.load_state_dict(ckpt["state_dict"])
     baseline_transformer_init.eval()
@@ -72,7 +72,7 @@ def main(args):
     wandb.init(name = args.ckpt + '_eval_measure')
 
     final_evals = {}
-    for epoch in args.epochs:
+    for epoch in np.range(1, args.num_epochs):
         
         all_complexities = {}
 
@@ -164,8 +164,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("ckpt", type=str, help="path of checkpoint")
     parser.add_argument("--result_suffix", type=str, default='robust_measures.pkl', help="name of result")
-    parser.add_argument('--epochs', type=int, nargs='+', default=[0,1,2,3,4,5,6,7,8,9],
-                    help='Which epochs to request checkpoints?')
+    parser.add_argument('--starting-epoch', type=int, default=1)
+    parser.add_argument('--num-epochs', type=int, default=20)
     parser.add_argument("--width", type=int, help="embedding dimension", default=64)
     parser.add_argument("--dataset", type=str, help="dataset", choices=['IWSLT', 'WMT'], default='IWSLT')
     parser.add_argument("--batch_size", type=int, help="batch size to create dataset", default=1500)

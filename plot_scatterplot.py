@@ -1,11 +1,21 @@
-#from experiments import EXPERIMENTS
-from experiments_single_depth import EXPERIMENTS
+from experiments import EXPERIMENTS
+#from experiments_single_depth import EXPERIMENTS
 from metrics import METRIC_FILES
 import argparse, pickle, os, json, re
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import mpmath
+import numpy as np
+
+
+def logdet_tpl_scalar(lam, beta):
+    numer = mpmath.meijerg([[],[beta,beta]],[[0,-1+beta,-1+beta],[]],lam)
+    denom = mpmath.expint(beta,lam)
+    return float(numer / denom)
+
+logdet_tpl = np.vectorize(logdet_tpl_scalar)
 
 def adjust_measure(metric, val, dataset_size):
     
@@ -56,6 +66,15 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
                 d = pickle.load(file)
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['exponent'].mean())     # averaging over layers
+                
+        elif metric == 'exponent_adjusted':
+            FILE = os.path.join(experiment, "results.pkl")
+            with open(FILE, 'rb') as file:
+                d = pickle.load(file)
+            for epoch in epochs:
+                exp_adjusted = [exp_layer*xmin_layer for exp_layer, xmin_layer in zip(d[epoch]['details']['exponent'], d[epoch]['details']['xmin'])]     # adjust the exponent by xmin
+                exp_adjusted = np.array(exp_adjusted).mean()  # averaging over layers
+                metric_vals.append(exp_adjusted)     
         
         elif metric_file == 'ww':
             # Get from results.pkl
@@ -71,6 +90,10 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
                 # Special case for KS_distance
                 if metric == 'KS_distance':
                     metric_vals.append(d[epoch]['details']['D'].mean())     # averaging over layers
+                elif metric == 'logdet_tpl_per_layer':
+                    betas = d[epoch]['details']['alpha']
+                    lambdas = d[epoch]['details']['exponent']
+                    metric_vals.append(logdet_tpl(lambdas, betas).mean())
                 elif metric in d[epoch]['details']:
                     metric_vals.append(d[epoch]['details'][metric].mean())     # averaging over layers
                 else:
@@ -96,10 +119,22 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
                     print(f"{FILE} missing {metric}")
                     metric_vals.append(np.nan)
         
+        elif metric_file == 'combine':
+            # These are the metrics combined by existing metrics
+            
+            if metric == 'logdet_tpl':
+                assert 'exponent' in metrics.keys()
+                assert 'TPL_alpha' in metrics.keys()
+                lambdas = metrics['exponent']
+                betas = metrics['TPL_alpha']
+                metric_vals = logdet_tpl(lambdas, betas)
+            else:
+                raise ValueError('Combined metric not found.')
+        
         metrics[metric] = metric_vals
     
     ### Get BLEU scores ###
-    id_bleu_scores, ood_bleu_scores, id_bleu_gaps, id_bleu_train_scores, id_loss_gaps = [], [], [], [], []
+    id_bleu_scores, ood_bleu_scores, id_bleu_gaps, id_bleu_train_scores, id_loss_gaps, id_train_losses, id_val_losses = [], [], [], [], [], [], []
     EPOCH = 1   # Epochs are numbered 1-20
     FILE = os.path.join(experiment, "bleu_loss.jsonl")
     with open(FILE, "rb") as file:
@@ -110,6 +145,8 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
             id_bleu_train_scores.append(d[f'epoch{EPOCH}_id_train_bleu_score'] * 100)
             id_bleu_gaps.append((d[f'epoch{EPOCH}_id_train_bleu_score'] - d[f'epoch{EPOCH}_id_bleu_score'])* 100)
             id_loss_gaps.append(d[f'epoch{EPOCH}_id_val_loss'] - d[f'epoch{EPOCH}_id_train_loss'])
+            id_train_losses.append(d[f'epoch{EPOCH}_id_train_loss'])
+            id_val_losses.append(d[f'epoch{EPOCH}_id_val_loss'])
             
             EPOCH += 1
     
@@ -117,6 +154,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
     data = {
         'epoch': epochs, 'id_bleu': id_bleu_scores, 'ood_bleu': ood_bleu_scores, 
         'id_bleu_gap': id_bleu_gaps, 'id_bleu_train': id_bleu_train_scores, 'id_loss_gap': id_loss_gaps,
+        'id_loss_train': id_train_losses, 'id_loss_val': id_val_losses
     }
     data.update(metrics)
     df = pd.DataFrame(data=data)
@@ -132,7 +170,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     assert args.metric in METRIC_FILES.keys()
-    assert args.bleu_type in ["id_bleu", "ood_bleu", "id_bleu_gap", "id_bleu_train", "id_loss_gap"]
+    assert args.bleu_type in ["id_bleu", "ood_bleu", "id_bleu_gap", "id_bleu_train", "id_loss_gap", "id_loss_train", "id_loss_val"]
     assert args.group in ["sample", "depth", "lr"]
     assert args.distribution in ["PL", "TPL"]
 
@@ -148,6 +186,8 @@ if __name__ == '__main__':
             'id_bleu_train': sum([metric_bleu_df.iloc[-x]['id_bleu_train'] for x in range(1,1+average_length)])/average_length,
             'id_bleu_gap': sum([metric_bleu_df.iloc[-x]['id_bleu_gap'] for x in range(1,1+average_length)])/average_length,
             'id_loss_gap': sum([metric_bleu_df.iloc[-x]['id_loss_gap'] for x in range(1,1+average_length)])/average_length,
+            'id_loss_train': sum([metric_bleu_df.iloc[-x]['id_loss_train'] for x in range(1,1+average_length)])/average_length,
+            'id_loss_val': sum([metric_bleu_df.iloc[-x]['id_loss_val'] for x in range(1,1+average_length)])/average_length,
             'ood_bleu': sum([metric_bleu_df.iloc[-x]['ood_bleu'] for x in range(1,1+average_length)])/average_length,
             f'{args.metric}': sum([metric_bleu_df.iloc[-x][f'{args.metric}'] for x in range(1,1+average_length)])/average_length,
             'sample': re.search("sample(\d+)", experiment).group(1),
@@ -164,6 +204,8 @@ if __name__ == '__main__':
         plot_metric_name = 'E_TPL_lambda'
     elif plot_metric_name == 'TPL_alpha':
         plot_metric_name = 'E_TPL_beta'
+    elif plot_metric_name == 'exponent_adjusted':
+        plot_metric_name = 'E_TPL_lambda_adjusted'
     
     ### Make scatterplots ###
     SAVE_DIR = f"plots/{args.distribution}/{plot_metric_name}"

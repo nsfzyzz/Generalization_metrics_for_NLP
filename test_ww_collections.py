@@ -40,10 +40,9 @@ def main(args):
 
     # Compute metrics for all epochs
     ww_metrics = {}     # key: epoch, value: results dict
-    EPOCHS = 20
     wandb.init(name = args.ckpt + '_ww')
 
-    for epoch in range(1, EPOCHS+1):
+    for epoch in range(1, args.num_epochs+1):
         print(f"\nEPOCH {epoch}")
         ckpt = torch.load(os.path.join(args.ckpt,f"net_epoch_{epoch}.ckpt"), map_location='cpu')
         baseline_transformer.load_state_dict(ckpt["state_dict"])
@@ -106,6 +105,7 @@ if __name__ == "__main__":
     # distribution is only for WeightWatcher2
     parser.add_argument("--distribution", choices=["truncated_power_law", "power_law", "lognormal", "exponential"])
     parser.add_argument("--num-layers", type=int, help="number of Transformer layers", default=6)
+    parser.add_argument("--num-epochs", type=int, help="number of epochs", default=20)
 
     #parser.add_argument("--negative-lambda", action='store_true', default=False)
 

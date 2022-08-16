@@ -52,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint_dir", type=str, default="")
     parser.add_argument("--max_batches", type=int, default=200)
     parser.add_argument("--seed", type=int, default=24)
+    parser.add_argument("--num_epochs", type=int, default=20)
     parser.add_argument("--dataset", type=str, default='IWSLT')
 
     args = parser.parse_args()
@@ -112,11 +113,10 @@ if __name__ == "__main__":
     )
     ###
     
-    NUM_EPOCHS = 20
     output = ""
     
     # Compute metrics for epochs 1-20
-    for EPOCH in range(1, NUM_EPOCHS+1):
+    for EPOCH in range(1, args.num_epochs+1):
         ckpt_file = os.path.join(args.checkpoint_dir, f"net_epoch_{EPOCH}.ckpt")
         model.load_state_dict(
             torch.load(ckpt_file, map_location=DEVICE)["state_dict"]
