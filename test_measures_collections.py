@@ -72,7 +72,7 @@ def main(args):
     wandb.init(name = args.ckpt + '_eval_measure')
 
     final_evals = {}
-    for epoch in np.range(1, args.num_epochs):
+    for epoch in range(1, args.num_epochs):
         
         all_complexities = {}
 
