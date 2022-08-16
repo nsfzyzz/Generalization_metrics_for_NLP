@@ -41,9 +41,6 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
     ### Get metrics ###
     metrics = {}    # Key: metric name, Value: list of metric values (length num_epochs)
 
-    EPOCHS = 20
-    epochs = list(range(1, EPOCHS+1))
-
     for metric, metric_file in METRIC_FILES.items():
         metric_vals = []
         
@@ -57,6 +54,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
                 FILE = os.path.join(experiment, "results.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['alpha'].mean())     # averaging over layers
                 
@@ -64,6 +62,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
             FILE = os.path.join(experiment, "results.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['exponent'].mean())     # averaging over layers
                 
@@ -71,6 +70,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
             FILE = os.path.join(experiment, "results.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 exp_adjusted = [exp_layer*xmin_layer for exp_layer, xmin_layer in zip(d[epoch]['details']['exponent'], d[epoch]['details']['xmin'])]     # adjust the exponent by xmin
                 exp_adjusted = np.array(exp_adjusted).mean()  # averaging over layers
@@ -86,6 +86,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
                 raise ValueError('Unknown distribution.')
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 # Special case for KS_distance
                 if metric == 'KS_distance':
@@ -105,6 +106,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
             FILE = os.path.join(experiment, "robust_measures.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 if metric in d[epoch]:
                     _val = d[epoch][metric]
@@ -157,7 +159,19 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
         'id_loss_train': id_train_losses, 'id_loss_val': id_val_losses
     }
     data.update(metrics)
-    df = pd.DataFrame(data=data)
+    #num_epochs = len(data['epoch'])
+    #for key in data.keys():
+    #    if len(data[key])<num_epochs:
+    #        data[key] = [0] + data[key]
+    
+    try:
+        df = pd.DataFrame(data=data)
+    except ValueError:
+        print('The dimension does not match! The experiment is')
+        print(experiment)
+        for key in data.keys():
+            print(key + " dimension is "+str(len(data[key])))
+        
     return df
 
 if __name__ == '__main__':
