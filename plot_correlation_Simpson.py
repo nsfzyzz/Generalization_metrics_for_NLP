@@ -140,7 +140,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
                 id_bleu_scores.append(d[f'epoch{EPOCH}_id_bleu_score'] * 100 * -1.0)
                 ood_bleu_scores.append(d[f'epoch{EPOCH}_ood_bleu_score'] * 100 * -1.0)
             elif bleu_type == 'gap':
-                id_bleu_scores.append((d[f'epoch{EPOCH}_id_train_bleu_score'] - d[f'epoch{EPOCH}_id_bleu_score'])* 100 * -1.0)
+                id_bleu_scores.append((d[f'epoch{EPOCH}_id_train_bleu_score'] - d[f'epoch{EPOCH}_id_bleu_score'])* 100)
                 ood_bleu_scores.append(d[f'epoch{EPOCH}_ood_bleu_score'] * 100 * -1.0)
             else:
                 raise ValueError('Bleu type not implemented.')
