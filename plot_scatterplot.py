@@ -213,13 +213,25 @@ if __name__ == '__main__':
     
     df = pd.DataFrame.from_records(records)
     
-    plot_metric_name = args.metric
+    plot_metric_name = args.metric.lower()
     if plot_metric_name == 'exponent':
         plot_metric_name = 'E_TPL_lambda'
-    elif plot_metric_name == 'TPL_alpha':
+    elif plot_metric_name == 'tpl_alpha':
         plot_metric_name = 'E_TPL_beta'
+    elif plot_metric_name == 'pl_alpha':
+        plot_metric_name = 'PL_alpha'
     elif plot_metric_name == 'exponent_adjusted':
         plot_metric_name = 'E_TPL_lambda_adjusted'
+        
+    plot_bleu_type_name = args.bleu_type
+    if plot_bleu_type_name == 'id_bleu':
+        plot_bleu_type_name = 'BLEU score'
+        
+    plot_group_name = args.group
+    if plot_group_name == 'lr':
+        plot_group_name = 'Learning rate'
+    if plot_group_name == 'sample':
+        plot_group_name = 'Num samples'
     
     ### Make scatterplots ###
     SAVE_DIR = f"plots/{args.distribution}/{plot_metric_name}"
@@ -228,15 +240,20 @@ if __name__ == '__main__':
 
     # Regular scatterplot
     fig, ax = plt.subplots(figsize=(9,9))
-    sns.lmplot(
+    lm = sns.lmplot(
         data=df,
         x=f'{args.metric}',
         y=f'{args.bleu_type}',
         hue=f'{args.group}',
         fit_reg=False,
+        legend=False,
     )
-    plt.xlabel(plot_metric_name)
-    plt.title(f"{plot_metric_name} vs. {args.bleu_type}")
+    ax = lm.axes[0, 0]
+    ax.set_xlabel(plot_metric_name, fontsize=18)
+    ax.set_ylabel(plot_bleu_type_name, fontsize=18)
+    ax.set_title(f"{plot_metric_name} vs. {plot_bleu_type_name}", fontsize=18)
+    legend = plt.legend(title=plot_group_name, bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=14)#, labels=['Hell Yeh', 'Nah Bruh'])
+    plt.setp(legend.get_title(),fontsize=14)
     plt.savefig(
         os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}"),
         bbox_inches='tight',
@@ -245,14 +262,17 @@ if __name__ == '__main__':
     xmin,xmax,ymin,ymax = plt.axis()    # save for making best within group plot
 
     # Simpson's scatterplot
-    sns.lmplot(
+    fig, ax = plt.subplots(figsize=(9,9))
+    lm = sns.lmplot(
         data=df,
         x=f'{args.metric}',
         y=f'{args.bleu_type}',
         hue=f'{args.group}',
         fit_reg=True,
         ci=None,
+        legend=False,
     )
+    ax = lm.axes[0, 0]
     sns.regplot(
         data=df,
         x=f'{args.metric}',
@@ -262,8 +282,13 @@ if __name__ == '__main__':
         ci=None,
         color='gray',
     )
-    plt.xlabel(plot_metric_name)
-    plt.title(f"{plot_metric_name} vs. {args.bleu_type}")
+    ax.set_xlabel(plot_metric_name, fontsize=18)
+    ax.set_ylabel(plot_bleu_type_name, fontsize=18)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.tick_params(axis='both', which='minor', labelsize=12)
+    ax.set_title(f"{plot_metric_name} vs. {plot_bleu_type_name}", fontsize=18)
+    legend = plt.legend(title=plot_group_name, bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=14)
+    plt.setp(legend.get_title(),fontsize=14)
     plt.savefig(
         os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}_simpson"),
         bbox_inches='tight',
@@ -272,17 +297,22 @@ if __name__ == '__main__':
 
     # Only best performing in each group
     fig, ax = plt.subplots(figsize=(9,9))
-    sns.lmplot(
+    lm = sns.lmplot(
         data=df.sort_values(by=f'{args.bleu_type}', ascending=False).groupby(f'{args.group}', as_index=False).first(),
         x=f'{args.metric}',
         y=f'{args.bleu_type}',
         hue=f'{args.group}',
         fit_reg=False,
+        legend=False,
     )
-    plt.xlabel(plot_metric_name)
-    plt.xlim([xmin,xmax])
-    plt.ylim([ymin,ymax])
-    plt.title(f"{plot_metric_name} vs. {args.bleu_type}\nbest performing model in each group")
+    ax = lm.axes[0, 0]
+    ax.set_xlabel(plot_metric_name, fontsize=18)
+    ax.set_ylabel(plot_bleu_type_name, fontsize=18)
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([ymin,ymax])
+    ax.set_title(f"{plot_metric_name} vs. {plot_bleu_type_name}\nbest performing model in each group", fontsize=18)
+    legend = plt.legend(title=plot_group_name, bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=14)
+    plt.setp(legend.get_title(),fontsize=14)
     plt.savefig(
         os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}_best"),
         bbox_inches='tight',
