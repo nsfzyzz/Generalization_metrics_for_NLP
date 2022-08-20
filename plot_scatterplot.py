@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mpmath
 import numpy as np
+import pickle
 
 
 def logdet_tpl_scalar(lam, beta):
@@ -233,6 +234,20 @@ if __name__ == '__main__':
     if plot_group_name == 'sample':
         plot_group_name = 'Num samples'
     
+    ### Compute spearman's rank correlations
+    SAVE_DIR_CORR = f"results/{args.distribution}/{plot_metric_name}"
+    if not os.path.exists(SAVE_DIR_CORR):
+        os.makedirs(SAVE_DIR_CORR)
+
+    rank_correlation_result = {'sample':[], 'depth':[], 'lr':[]}
+    for g0, g1, g2 in [('sample', 'depth', 'lr'), ('depth', 'lr', 'sample'), ('lr', 'sample', 'depth')]:
+        for g1_value in df[g1].unique():
+            for g2_value in df[g2].unique():
+                corr = df.loc[ (df[g1] == g1_value) & (df[g2] == g2_value)][[args.bleu_type, args.metric]].corr(method='spearman').values[0][1]
+                rank_correlation_result[g0].append(corr)
+
+    pickle.dump(rank_correlation_result, open(os.path.join(SAVE_DIR_CORR, f'corr_{args.bleu_type}.pkl'), 'wb'))
+
     ### Make scatterplots ###
     SAVE_DIR = f"plots/{args.distribution}/{plot_metric_name}"
     if not os.path.exists(SAVE_DIR):
@@ -281,7 +296,7 @@ if __name__ == '__main__':
         fit_reg=True,
         ci=None,
         color='gray',
-    )
+    )    
     ax.set_xlabel(plot_metric_name, fontsize=18)
     ax.set_ylabel(plot_bleu_type_name, fontsize=18)
     ax.tick_params(axis='both', which='major', labelsize=14)
@@ -318,5 +333,3 @@ if __name__ == '__main__':
         bbox_inches='tight',
         dpi=150,
     )
-
-
