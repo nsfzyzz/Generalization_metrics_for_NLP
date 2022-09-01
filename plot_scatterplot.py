@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mpmath
 import numpy as np
+import pickle
 
 
 def logdet_tpl_scalar(lam, beta):
@@ -41,9 +42,6 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
     ### Get metrics ###
     metrics = {}    # Key: metric name, Value: list of metric values (length num_epochs)
 
-    EPOCHS = 20
-    epochs = list(range(1, EPOCHS+1))
-
     for metric, metric_file in METRIC_FILES.items():
         metric_vals = []
         
@@ -57,6 +55,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
                 FILE = os.path.join(experiment, "results.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['alpha'].mean())     # averaging over layers
                 
@@ -64,6 +63,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
             FILE = os.path.join(experiment, "results.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 metric_vals.append(d[epoch]['details']['exponent'].mean())     # averaging over layers
                 
@@ -71,6 +71,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
             FILE = os.path.join(experiment, "results.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 exp_adjusted = [exp_layer*xmin_layer for exp_layer, xmin_layer in zip(d[epoch]['details']['exponent'], d[epoch]['details']['xmin'])]     # adjust the exponent by xmin
                 exp_adjusted = np.array(exp_adjusted).mean()  # averaging over layers
@@ -86,6 +87,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
                 raise ValueError('Unknown distribution.')
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 # Special case for KS_distance
                 if metric == 'KS_distance':
@@ -105,6 +107,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
             FILE = os.path.join(experiment, "robust_measures.pkl")
             with open(FILE, 'rb') as file:
                 d = pickle.load(file)
+            epochs = d.keys()
             for epoch in epochs:
                 if metric in d[epoch]:
                     _val = d[epoch][metric]
@@ -157,7 +160,19 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back):
         'id_loss_train': id_train_losses, 'id_loss_val': id_val_losses
     }
     data.update(metrics)
-    df = pd.DataFrame(data=data)
+    #num_epochs = len(data['epoch'])
+    #for key in data.keys():
+    #    if len(data[key])<num_epochs:
+    #        data[key] = [0] + data[key]
+    
+    try:
+        df = pd.DataFrame(data=data)
+    except ValueError:
+        print('The dimension does not match! The experiment is')
+        print(experiment)
+        for key in data.keys():
+            print(key + " dimension is "+str(len(data[key])))
+        
     return df
 
 if __name__ == '__main__':
@@ -199,14 +214,40 @@ if __name__ == '__main__':
     
     df = pd.DataFrame.from_records(records)
     
-    plot_metric_name = args.metric
+    plot_metric_name = args.metric.lower()
     if plot_metric_name == 'exponent':
         plot_metric_name = 'E_TPL_lambda'
-    elif plot_metric_name == 'TPL_alpha':
+    elif plot_metric_name == 'tpl_alpha':
         plot_metric_name = 'E_TPL_beta'
+    elif plot_metric_name == 'pl_alpha':
+        plot_metric_name = 'PL_alpha'
     elif plot_metric_name == 'exponent_adjusted':
         plot_metric_name = 'E_TPL_lambda_adjusted'
+        
+    plot_bleu_type_name = args.bleu_type
+    if plot_bleu_type_name == 'id_bleu':
+        plot_bleu_type_name = 'BLEU score'
+        
+    plot_group_name = args.group
+    if plot_group_name == 'lr':
+        plot_group_name = 'Learning rate'
+    if plot_group_name == 'sample':
+        plot_group_name = 'Num samples'
     
+    ### Compute spearman's rank correlations
+    SAVE_DIR_CORR = f"results/{args.distribution}/{plot_metric_name}"
+    if not os.path.exists(SAVE_DIR_CORR):
+        os.makedirs(SAVE_DIR_CORR)
+
+    rank_correlation_result = {'sample':[], 'depth':[], 'lr':[]}
+    for g0, g1, g2 in [('sample', 'depth', 'lr'), ('depth', 'lr', 'sample'), ('lr', 'sample', 'depth')]:
+        for g1_value in df[g1].unique():
+            for g2_value in df[g2].unique():
+                corr = df.loc[ (df[g1] == g1_value) & (df[g2] == g2_value)][[args.bleu_type, args.metric]].corr(method='spearman').values[0][1]
+                rank_correlation_result[g0].append(corr)
+
+    pickle.dump(rank_correlation_result, open(os.path.join(SAVE_DIR_CORR, f'corr_{args.bleu_type}.pkl'), 'wb'))
+
     ### Make scatterplots ###
     SAVE_DIR = f"plots/{args.distribution}/{plot_metric_name}"
     if not os.path.exists(SAVE_DIR):
@@ -214,15 +255,20 @@ if __name__ == '__main__':
 
     # Regular scatterplot
     fig, ax = plt.subplots(figsize=(9,9))
-    sns.lmplot(
+    lm = sns.lmplot(
         data=df,
         x=f'{args.metric}',
         y=f'{args.bleu_type}',
         hue=f'{args.group}',
         fit_reg=False,
+        legend=False,
     )
-    plt.xlabel(plot_metric_name)
-    plt.title(f"{plot_metric_name} vs. {args.bleu_type}")
+    ax = lm.axes[0, 0]
+    ax.set_xlabel(plot_metric_name, fontsize=18)
+    ax.set_ylabel(plot_bleu_type_name, fontsize=18)
+    ax.set_title(f"{plot_metric_name} vs. {plot_bleu_type_name}", fontsize=18)
+    legend = plt.legend(title=plot_group_name, bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=14)#, labels=['Hell Yeh', 'Nah Bruh'])
+    plt.setp(legend.get_title(),fontsize=14)
     plt.savefig(
         os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}"),
         bbox_inches='tight',
@@ -231,14 +277,17 @@ if __name__ == '__main__':
     xmin,xmax,ymin,ymax = plt.axis()    # save for making best within group plot
 
     # Simpson's scatterplot
-    sns.lmplot(
+    fig, ax = plt.subplots(figsize=(9,9))
+    lm = sns.lmplot(
         data=df,
         x=f'{args.metric}',
         y=f'{args.bleu_type}',
         hue=f'{args.group}',
         fit_reg=True,
         ci=None,
+        legend=False,
     )
+    ax = lm.axes[0, 0]
     sns.regplot(
         data=df,
         x=f'{args.metric}',
@@ -247,9 +296,14 @@ if __name__ == '__main__':
         fit_reg=True,
         ci=None,
         color='gray',
-    )
-    plt.xlabel(plot_metric_name)
-    plt.title(f"{plot_metric_name} vs. {args.bleu_type}")
+    )    
+    ax.set_xlabel(plot_metric_name, fontsize=18)
+    ax.set_ylabel(plot_bleu_type_name, fontsize=18)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.tick_params(axis='both', which='minor', labelsize=12)
+    ax.set_title(f"{plot_metric_name} vs. {plot_bleu_type_name}", fontsize=18)
+    legend = plt.legend(title=plot_group_name, bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=14)
+    plt.setp(legend.get_title(),fontsize=14)
     plt.savefig(
         os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}_simpson"),
         bbox_inches='tight',
@@ -258,21 +312,24 @@ if __name__ == '__main__':
 
     # Only best performing in each group
     fig, ax = plt.subplots(figsize=(9,9))
-    sns.lmplot(
+    lm = sns.lmplot(
         data=df.sort_values(by=f'{args.bleu_type}', ascending=False).groupby(f'{args.group}', as_index=False).first(),
         x=f'{args.metric}',
         y=f'{args.bleu_type}',
         hue=f'{args.group}',
         fit_reg=False,
+        legend=False,
     )
-    plt.xlabel(plot_metric_name)
-    plt.xlim([xmin,xmax])
-    plt.ylim([ymin,ymax])
-    plt.title(f"{plot_metric_name} vs. {args.bleu_type}\nbest performing model in each group")
+    ax = lm.axes[0, 0]
+    ax.set_xlabel(plot_metric_name, fontsize=18)
+    ax.set_ylabel(plot_bleu_type_name, fontsize=18)
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([ymin,ymax])
+    ax.set_title(f"{plot_metric_name} vs. {plot_bleu_type_name}\nbest performing model in each group", fontsize=18)
+    legend = plt.legend(title=plot_group_name, bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=14)
+    plt.setp(legend.get_title(),fontsize=14)
     plt.savefig(
         os.path.join(SAVE_DIR, f"{args.bleu_type}_{plot_metric_name}_{args.group}_best"),
         bbox_inches='tight',
         dpi=150,
     )
-
-
