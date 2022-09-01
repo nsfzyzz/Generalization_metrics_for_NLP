@@ -1991,6 +1991,10 @@ class WeightWatcher(object):
             ih = np.argmax(h[0])
             xmin2 = 10 ** h[1][ih]
             xmin_range = (0.95 * xmin2, 1.05 * xmin2)
+            valid_xmins = [x for x in evals if (x>0.95 * xmin2) and (x <1.05 * xmin2)]
+            if len(valid_xmins)==1:
+                logger.info("Only one xmin to search. Slightly increase the number of xmins.")
+                xmin_range = (0.9 * xmin2, 1.1 * xmin2)
             
             fit = powerlaw.Fit(evals, xmin=xmin_range, xmax=xmax, verbose=False, xmin_distribution=distribution)
              
