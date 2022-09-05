@@ -80,7 +80,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
         metric_vals = []
 
         if METRIC_FILES[metric] == 'results':
-            if metric in ['PL_alpha', 'rand_distance', 'mp_softrank', 'KS_distance', 'alpha_weighted', 'log_alpha_norm', 'stable_rank']:
+            if metric in ['PL_alpha', 'rand_distance', 'mp_softrank', 'alpha_weighted', 'log_alpha_norm', 'stable_rank']:
                 for epoch in epochs:
                     FILE = os.path.join(checkpoint, f"results_original_alpha.pkl")
                     with open(FILE, "rb") as file:
@@ -95,6 +95,12 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
                         # Fill in missing metrics with null (not all checkpoints have all metrics calculated)
                         metric_vals.append(np.nan)
                         print(f"{FILE}\n\tepoch {epoch} missing {metric}")
+            elif metric == 'exp_dist_exponent':
+                FILE = os.path.join(checkpoint, "results_exponential.pkl")
+                with open(FILE, 'rb') as file:
+                    d = pickle.load(file)
+                for epoch in epochs:
+                    metric_vals.append(d[epoch]['details']['exponent'].mean())
             else:
                 FILE = os.path.join(checkpoint, "results.pkl")
                 with open(FILE, 'rb') as file:
@@ -186,7 +192,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(figsize=(6,10), dpi=150)
         fig.suptitle("Distribution of Rank Correlation\nbetween ID BLEU Score and Generalization Metric")
         
-        pickle.dump(all_corrs, open('results/correlation.pkl', "wb"))
+        pickle.dump(all_corrs, open(f'results/Simpson_correlation_{args.id}_{args.bleu_type}.pkl', "wb"))
         
         sns.boxplot(
             data=all_corrs,
@@ -201,7 +207,7 @@ if __name__ == "__main__":
         ax.set_xlim([-1.0, 1.0])
         ax.legend(prop={'size': 6})
         plt.savefig(
-            "plots/id_correlations_WMT",
+            f"plots/id_correlations_{args.id}_{args.bleu_type}",
             # f"plots/ood_correlations/{args.id}",
             # f"plots/id_correlations/{args.id}",
             bbox_inches='tight'
