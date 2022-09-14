@@ -71,7 +71,7 @@ def main(args):
 
     wandb.init(name = args.ckpt + '_eval_measure')
 
-    final_evals = pickle.load(open( os.path.join(args.ckpt, args.result_suffix), "wb" ))
+    final_evals = pickle.load(open( os.path.join(args.ckpt, args.result_suffix), "rb" ))
     
     if 20 in final_evals.keys():
         print('No need to debug this file. Return!')
