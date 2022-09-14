@@ -70,7 +70,11 @@ def main(args):
     baseline_transformer_init.eval()
 
     wandb.init(name = args.ckpt + '_eval_measure')
-
+    
+    if args.ckpt == '/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/IWSLT_sample40000_depth4_lr0.0625_dropout0.1':
+        print('This experiment is taken care of separately!')
+        return
+    
     final_evals = pickle.load(open( os.path.join(args.ckpt, args.result_suffix), "rb" ))
     
     if 20 in final_evals.keys():
