@@ -33,7 +33,7 @@ def main(args):
             model_dimension=args.width,
             src_vocab_size=src_vocab_size,
             trg_vocab_size=trg_vocab_size,
-            number_of_heads=BASELINE_MODEL_NUMBER_OF_HEADS,
+            number_of_heads=args.num_heads,
             number_of_layers=args.num_layers,
             dropout_probability=BASELINE_MODEL_DROPOUT_PROB
         )
@@ -42,7 +42,7 @@ def main(args):
     ww_metrics = {}     # key: epoch, value: results dict
     wandb.init(name = args.ckpt + '_ww')
 
-    for epoch in range(1, args.num_epochs+1):
+    for epoch in range(args.starting_epoch, args.num_epochs+1):
         print(f"\nEPOCH {epoch}")
         ckpt = torch.load(os.path.join(args.ckpt,f"net_epoch_{epoch}.ckpt"), map_location='cpu')
         baseline_transformer.load_state_dict(ckpt["state_dict"])
@@ -106,6 +106,8 @@ if __name__ == "__main__":
     parser.add_argument("--distribution", choices=["truncated_power_law", "power_law", "lognormal", "exponential"])
     parser.add_argument("--num-layers", type=int, help="number of Transformer layers", default=6)
     parser.add_argument("--num-epochs", type=int, help="number of epochs", default=20)
+    parser.add_argument("--starting-epoch", type=int, help="The starting epoch number", default=1)
+    parser.add_argument("--num-heads", type=int, help="number of Transformer heads", default=BASELINE_MODEL_NUMBER_OF_HEADS)
 
     #parser.add_argument("--negative-lambda", action='store_true', default=False)
 
