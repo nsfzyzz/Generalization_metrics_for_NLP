@@ -176,10 +176,11 @@ def train_transformer(training_config):
         model_dimension=args.embedding_dimension,
         src_vocab_size=src_vocab_size,
         trg_vocab_size=trg_vocab_size,
-        number_of_heads=BASELINE_MODEL_NUMBER_OF_HEADS,
+        number_of_heads=args.num_heads,
         number_of_layers=args.num_layers,
-        dropout_probability=args.dropout
+        dropout_probability=args.dropout,
     ).to(device)
+    #embedding_factor_dimension=args.embedding_factor_dimension
 
     # Step 3: Prepare other training related utilities
     kl_div_loss = nn.KLDivLoss(reduction='batchmean')  # gives better BLEU score than "mean"
@@ -301,11 +302,13 @@ if __name__ == "__main__":
     parser.add_argument("--lr-factor", type=float, help="factor to adjust the inverse dim lr", default=1.0)
     parser.add_argument("--dropout", type=float, help="dropout probability", default=0.0)
     parser.add_argument("--num-layers", type=int, help="number of Transformer layers", default=6)
+    parser.add_argument("--num-heads", type=int, help="number of Transformer layers", default=BASELINE_MODEL_NUMBER_OF_HEADS)
     
     # Some parameters to change the Sharpness transform
     parser.add_argument("--sharpness-transform", help="apply sharpness transform?", action="store_true")
     parser.add_argument("--sharpness-perbatch", help="apply sharpness transform to each batch?", action="store_true")
     parser.add_argument("--sharpness-frequency", type=int, help="how many batches should we apply the transform", default=100)
+    #parser.add_argument("--embedding-factor-dimension", type=float, help="Should we fix the embedding factor dimension?", default=None)
 
     args = parser.parse_args()
 

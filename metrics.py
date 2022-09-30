@@ -35,7 +35,7 @@ METRIC_FILES = {
     'PL_alpha': 'ww',
     'TPL_alpha': 'ww',
     'exponent': 'ww',
-    # 'exp_dist_exponent': 'ww',     # missing
+    'exp_dist_exponent': 'ww',     # missing
     'KS_distance': 'ww',
     'tail_mean_vec_entropy': 'ww',
     'bulk_mean_vec_entropy': 'ww',

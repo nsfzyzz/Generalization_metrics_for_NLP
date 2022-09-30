@@ -53,7 +53,11 @@ if __name__ == "__main__":
     parser.add_argument("--max_batches", type=int, default=200)
     parser.add_argument("--seed", type=int, default=24)
     parser.add_argument("--num_epochs", type=int, default=20)
+    parser.add_argument("--starting_epoch", type=int, default=1)
     parser.add_argument("--dataset", type=str, default='IWSLT')
+    parser.add_argument("--num-heads", type=int, help="number of Transformer layers", default=BASELINE_MODEL_NUMBER_OF_HEADS)
+    parser.add_argument("--embedding-dimension", type=int, help="the dimension to save a checkpoint", default=BASELINE_MODEL_DIMENSION)
+    parser.add_argument("--efficient-eval", action='store_true', help="only evaluate the train BLEU to calculate the generalization gap", default=BASELINE_MODEL_DIMENSION)
 
     args = parser.parse_args()
     
@@ -104,10 +108,10 @@ if __name__ == "__main__":
     trg_vocab_size = len(trg_field_processor.vocab)
 
     model = Transformer(
-        model_dimension=BASELINE_MODEL_DIMENSION,
+        model_dimension=args.embedding_dimension,
         src_vocab_size=src_vocab_size,
         trg_vocab_size=trg_vocab_size,
-        number_of_heads=BASELINE_MODEL_NUMBER_OF_HEADS,
+        number_of_heads=args.num_heads,
         number_of_layers=DEPTH,
         dropout_probability=0.0,
     )
@@ -116,7 +120,7 @@ if __name__ == "__main__":
     output = ""
     
     # Compute metrics for epochs 1-20
-    for EPOCH in range(1, args.num_epochs+1):
+    for EPOCH in range(args.starting_epoch, args.num_epochs+1):
         ckpt_file = os.path.join(args.checkpoint_dir, f"net_epoch_{EPOCH}.ckpt")
         model.load_state_dict(
             torch.load(ckpt_file, map_location=DEVICE)["state_dict"]
@@ -127,16 +131,23 @@ if __name__ == "__main__":
         metrics = {}
         print(f"Getting metrics for epoch {EPOCH}...")
         # Compute training BLEU/loss
-        metrics[f'epoch{EPOCH}_id_train_loss'] = eval_loss(model, id_train_token_ids_loader, args.max_batches)
         metrics[f'epoch{EPOCH}_id_train_bleu_score'] = eval_bleu(model, id_train_token_ids_loader, trg_field_processor, args.max_batches)
-        # Compute validation BLEU/loss
-        metrics[f'epoch{EPOCH}_id_val_loss'] = eval_loss(model, id_val_token_ids_loader, args.max_batches)
-        metrics[f'epoch{EPOCH}_id_bleu_score'] = eval_bleu(model, id_val_token_ids_loader, trg_field_processor, args.max_batches)
-        metrics[f'epoch{EPOCH}_ood_val_loss'] = eval_loss(model, ood_val_token_ids_loader, args.max_batches)
-        metrics[f'epoch{EPOCH}_ood_bleu_score'] = eval_bleu(model, ood_val_token_ids_loader, trg_field_processor, args.max_batches)
+        if not args.efficient_eval:
+            metrics[f'epoch{EPOCH}_id_train_loss'] = eval_loss(model, id_train_token_ids_loader, args.max_batches)
+
+            # Compute validation BLEU/loss
+            metrics[f'epoch{EPOCH}_id_val_loss'] = eval_loss(model, id_val_token_ids_loader, args.max_batches)
+            metrics[f'epoch{EPOCH}_id_bleu_score'] = eval_bleu(model, id_val_token_ids_loader, trg_field_processor, args.max_batches)
+            metrics[f'epoch{EPOCH}_ood_val_loss'] = eval_loss(model, ood_val_token_ids_loader, args.max_batches)
+            metrics[f'epoch{EPOCH}_ood_bleu_score'] = eval_bleu(model, ood_val_token_ids_loader, trg_field_processor, args.max_batches)
         print(metrics)
         output += (json.dumps(metrics) + "\n")
 
     # Write entire output to file at once
-    with open(os.path.join(args.checkpoint_dir, "bleu_loss.jsonl"), "w+") as file:
+    if args.efficient_eval:
+        bleu_file_name = "bleu_loss_only_train.jsonl"
+    else:
+        bleu_file_name = "bleu_loss.jsonl"
+    
+    with open(os.path.join(args.checkpoint_dir, bleu_file_name), "w+") as file:
         file.write(output)

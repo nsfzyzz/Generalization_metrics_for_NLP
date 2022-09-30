@@ -59,7 +59,7 @@ def main(args):
             model_dimension=args.width,
             src_vocab_size=src_vocab_size,
             trg_vocab_size=trg_vocab_size,
-            number_of_heads=BASELINE_MODEL_NUMBER_OF_HEADS,
+            number_of_heads=args.num_heads,
             number_of_layers=args.num_layers,
             dropout_probability=BASELINE_MODEL_DROPOUT_PROB
         ).to(device)
@@ -84,7 +84,7 @@ def main(args):
                 model_dimension=args.width,
                 src_vocab_size=src_vocab_size,
                 trg_vocab_size=trg_vocab_size,
-                number_of_heads=BASELINE_MODEL_NUMBER_OF_HEADS,
+                number_of_heads=args.num_heads,
                 number_of_layers=args.num_layers,
                 dropout_probability=BASELINE_MODEL_DROPOUT_PROB
             ).to(device)
@@ -94,7 +94,7 @@ def main(args):
                     model_dimension=args.width,
                     src_vocab_size=src_vocab_size,
                     trg_vocab_size=trg_vocab_size,
-                    number_of_heads=BASELINE_MODEL_NUMBER_OF_HEADS,
+                    number_of_heads=args.num_heads,
                     number_of_layers=args.num_layers,
                     dropout_probability=BASELINE_MODEL_DROPOUT_PROB,
                     customize_layer_norm=True
@@ -177,6 +177,7 @@ if __name__ == "__main__":
     parser.add_argument("--calculate_pac_bayes", action='store_true')
     parser.add_argument("--bleu-max-batch", type=int, help="maximum number of batches to evaluate BLEU", default=200)
     parser.add_argument("--num-layers", type=int, help="number of Transformer layers", default=6)
+    parser.add_argument("--num-heads", type=int, help="number of Transformer heads", default=BASELINE_MODEL_NUMBER_OF_HEADS)
     
     args = parser.parse_args()
     

@@ -17,12 +17,13 @@ METRIC_TYPES = {
     'PL_alpha': 'shape',
     'TPL_alpha': 'shape',
     'exponent': 'shape',
-    # 'exp_dist_exponent': 'shape',     # need to fit with exponential distribution
-    'KS_distance': 'shape',
+    'exp_dist_exponent': 'shape',
+    'PL_KS_distance': 'shape',
+    'ETPL_KS_distance': 'shape',
     'tail_mean_vec_entropy': 'shape',
     'bulk_mean_vec_entropy': 'shape',
     'entropy': 'shape',
-    'rand_distance': 'shape',         # missing
+    #'rand_distance': 'shape',         # missing
     'alpha_weighted': 'hybrid',
     'log_alpha_norm': 'hybrid',
     'INVERSE_MARGIN': 'scale',
@@ -65,8 +66,9 @@ METRIC_FILES = {
     'PL_alpha': 'results',
     'TPL_alpha': 'results',
     'exponent': 'results',
-    # 'exp_dist_exponent': 'shape',     # need to fit with exponential distribution
-    'KS_distance': 'results',
+    'exp_dist_exponent': 'results',
+    'PL_KS_distance': 'results',
+    'ETPL_KS_distance': 'results',
     'tail_mean_vec_entropy': 'results',
     'bulk_mean_vec_entropy': 'results',
     'entropy': 'results',
