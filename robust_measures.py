@@ -1,8 +1,13 @@
+"""
+Adapted from "In search of robust measures of generalization" by Dziugaite et al.
+https://github.com/nitarshan/robust-generalization-measures.git
+"""
+
 from contextlib import contextmanager
 from copy import deepcopy
 import math
-from typing import Dict, List, Optional, Tuple
-
+from typing import List, Tuple
+from enum import Enum
 import numpy as np
 import torch
 from torch import Tensor
@@ -10,11 +15,48 @@ from torch.utils.data.dataloader import DataLoader
 from torch import Tensor
 import torch.nn as nn
 
-from experiment_config import DatasetType
-from experiment_config import ComplexityType as CT
 from utils.utils_CKA import *
 from utils.data_utils import get_masks_and_count_tokens, get_src_and_trg_batches
 from utils.optimizers_and_distributions import LabelSmoothingDistribution
+
+class CT(Enum):
+  # Measures from Fantastic Generalization Measures (equation numbers)
+  PARAMS = 20
+  INVERSE_MARGIN = 22
+  LOG_SPEC_INIT_MAIN = 29
+  LOG_SPEC_ORIG_MAIN = 30
+  LOG_PROD_OF_SPEC_OVER_MARGIN = 31
+  LOG_PROD_OF_SPEC = 32
+  FRO_OVER_SPEC = 33
+  LOG_SUM_OF_SPEC_OVER_MARGIN = 34
+  LOG_SUM_OF_SPEC = 35
+  LOG_PROD_OF_FRO_OVER_MARGIN = 36
+  LOG_PROD_OF_FRO = 37
+  LOG_SUM_OF_FRO_OVER_MARGIN = 38
+  LOG_SUM_OF_FRO = 39
+  FRO_DIST = 40
+  DIST_SPEC_INIT = 41
+  PARAM_NORM = 42
+  PATH_NORM_OVER_MARGIN = 43
+  PATH_NORM = 44
+  PACBAYES_INIT = 48
+  PACBAYES_ORIG = 49
+  PACBAYES_FLATNESS = 53
+  PACBAYES_MAG_INIT = 56
+  PACBAYES_MAG_ORIG = 57
+  PACBAYES_MAG_FLATNESS = 61
+  # Other Measures
+  L2 = 100
+  L2_DIST = 101
+  # FFT Spectral Measures
+  LOG_SPEC_INIT_MAIN_FFT = 129
+  LOG_SPEC_ORIG_MAIN_FFT = 130
+  LOG_PROD_OF_SPEC_OVER_MARGIN_FFT = 131
+  LOG_PROD_OF_SPEC_FFT = 132
+  FRO_OVER_SPEC_FFT = 133
+  LOG_SUM_OF_SPEC_OVER_MARGIN_FFT = 134
+  LOG_SUM_OF_SPEC_FFT = 135
+  DIST_SPEC_INIT_FFT = 141
 
 @torch.no_grad()
 def eval_batch(batch, model, labels):
@@ -46,6 +88,7 @@ def eval_acc(model, eval_loader):
 
 @torch.no_grad()
 def eval_NMT_loss(model, dataloader, pad_token_id=None, trg_vocab_size=0, NMT_maximum_samples = 10000):
+  ## This function is used to calculate the training loss of machine translation.
 
   num_processed_samples = 0
   device = next(model.parameters()).device
@@ -56,7 +99,7 @@ def eval_NMT_loss(model, dataloader, pad_token_id=None, trg_vocab_size=0, NMT_ma
 
     src_token_ids_batch, trg_token_ids_batch_input, target = get_src_and_trg_batches(token_ids_batch)
     num_processed_samples += token_ids_batch.batch_size
-    src_mask, trg_mask, num_src_tokens, num_trg_tokens = get_masks_and_count_tokens(src_token_ids_batch, trg_token_ids_batch_input, pad_token_id, device)
+    src_mask, trg_mask, _, _ = get_masks_and_count_tokens(src_token_ids_batch, trg_token_ids_batch_input, pad_token_id, device)
     logits = model(src_token_ids_batch, trg_token_ids_batch_input, src_mask, trg_mask) 
 
     kl_div_loss = nn.KLDivLoss(reduction='batchmean')
@@ -73,14 +116,6 @@ def eval_NMT_loss(model, dataloader, pad_token_id=None, trg_vocab_size=0, NMT_ma
   print(f"NMT training loss is {training_loss}")
 
   return training_loss
-
-class ExperimentBaseModel(nn.Module):
-  def __init__(self, dataset_type: DatasetType):
-    super().__init__()
-    self.dataset_type = dataset_type
-
-  def forward(self, x) -> Tensor:
-    raise NotImplementedError
 
 # Adapted from https://github.com/bneyshabur/generalization-bounds/blob/master/measures.py
 @torch.no_grad()
@@ -107,10 +142,10 @@ def _reparam(model):
 
 @contextmanager
 def _perturbed_model(
-  model: ExperimentBaseModel,
-  sigma: float,
+  model,
+  sigma,
   rng,
-  magnitude_eps: Optional[float] = None
+  magnitude_eps = None
 ):
   device = next(model.parameters()).device
   if magnitude_eps is not None:
@@ -128,20 +163,19 @@ def _perturbed_model(
 
 # Adapted from https://drive.google.com/file/d/1_6oUG94d0C3x7x2Vd935a2QqY-OaAWAM/view
 def _pacbayes_sigma(
-  model: ExperimentBaseModel,
-  dataloader: DataLoader,
-  accuracy: float,
-  seed: int,
-  magnitude_eps: Optional[float] = None,
-  search_depth: int = 15,
-  montecarlo_samples: int = 10,
-  accuracy_displacement: float = 0.1,
-  displacement_tolerance: float = 1e-2,
-  task_type: str = 'normal',
+  model,
+  dataloader,
+  accuracy,
+  seed,
+  magnitude_eps = None,
+  search_depth = 15,
+  montecarlo_samples = 10,
+  accuracy_displacement = 0.1,
+  displacement_tolerance = 1e-2,
+  task_type = 'normal',
   pad_token_id = None,
-  trg_vocab_size: int = 0,
-  pacbayes_depth: int = 15,
-  search_upper_limit: float = 0.2
+  trg_vocab_size = 0,
+  search_upper_limit = 0.2
 ) -> float:
   
   if task_type == 'NMT' and magnitude_eps:
@@ -215,11 +249,11 @@ def W_CKA(p,q, feature_space=True):
 
 @torch.no_grad()
 def get_all_measures(
-  model: ExperimentBaseModel,
-  init_model: ExperimentBaseModel,
-  dataloader: DataLoader,
-  acc: float,
-  seed: int,
+  model,
+  init_model,
+  dataloader,
+  acc,
+  seed,
   no_path_norm=True,
   no_exact_spectral_norm=True,
   no_pac_bayes=False,
@@ -231,7 +265,7 @@ def get_all_measures(
   pad_token_id=None,
   trg_vocab_size=0,
   pacbayes_depth=15
-) -> Dict[CT, float]:
+):
   measures = {}
 
   model = _reparam(model)
@@ -240,7 +274,7 @@ def get_all_measures(
   device = next(model.parameters()).device
   m = len(dataloader.dataset)
 
-  def get_weights_only(model: ExperimentBaseModel) -> List[Tensor]:
+  def get_weights_only(model):
     blacklist = {'bias', 'bn'}
     return [p for name, p in model.named_parameters() if all(x not in name for x in blacklist)]
   
@@ -290,9 +324,9 @@ def get_all_measures(
 
     @torch.no_grad()
     def _margin(
-      model: ExperimentBaseModel,
-      dataloader: DataLoader,
-      task_type: str = 'normal',
+      model,
+      dataloader,
+      task_type='normal',
       pad_token_id=None,
       NMT_maximum_samples = 10000,
     ) -> Tensor:
@@ -304,18 +338,7 @@ def get_all_measures(
           num_processed_samples += token_ids_batch.batch_size
           src_mask, trg_mask, num_src_tokens, num_trg_tokens = get_masks_and_count_tokens(src_token_ids_batch, trg_token_ids_batch_input, pad_token_id, device)
           logits = model(src_token_ids_batch, trg_token_ids_batch_input, src_mask, trg_mask, no_softmax=True) # do not use softmax
-          # The following is for calculating training loss
-          #logits = model(src_token_ids_batch, trg_token_ids_batch_input, src_mask, trg_mask, no_softmax=False) # do not use softmax
           margins.append(_calculate_margin(logits.clone(),target.flatten()))
-
-          # The following is used for assessing the training loss
-          #kl_div_loss = nn.KLDivLoss(reduction='batchmean')
-          #BASELINE_MODEL_LABEL_SMOOTHING_VALUE = 0.1
-          #trg_vocab_size = 7159
-          #label_smoothing = LabelSmoothingDistribution(BASELINE_MODEL_LABEL_SMOOTHING_VALUE, pad_token_id, trg_vocab_size, device)
-          #smooth_target_distributions = label_smoothing(target)  # these are regular probabilities
-          #loss = kl_div_loss(logits, smooth_target_distributions)
-          #print(f"Training loss is {loss.item()}")
           
           if num_processed_samples >= NMT_maximum_samples:
             print(f"There are {num_processed_samples} sentences processed when calculating the margin.")
@@ -334,7 +357,7 @@ def get_all_measures(
         return torch.cat(margins).kthvalue(m // 10)[0]
 
     true_margin = _margin(model, dataloader, task_type, pad_token_id)
-    measures["TRUE_MARGIN"] = true_margin # This measure is used to check if the true margin could become negative
+    measures["TRUE_MARGIN"] = true_margin # Only used for checking if the true margin could become negative
     margin = true_margin.abs()
     measures["INVERSE_MARGIN"] = torch.tensor(1, device=device) / margin ** 2 # 22
 
@@ -376,7 +399,7 @@ def get_all_measures(
   if not no_path_norm:
     print("Path-norm")
     # Adapted from https://github.com/bneyshabur/generalization-bounds/blob/master/measures.py#L98
-    def _path_norm(model: ExperimentBaseModel) -> Tensor:
+    def _path_norm(model):
       model = deepcopy(model)
       model.eval()
       for param in model.parameters():
@@ -397,8 +420,6 @@ def get_all_measures(
         x = model(src_token, trg_token, src_mask, trg_mask)
       else:
         raise ValueError
-      #x = torch.ones([1] + list(model.dataset_type.D), device=device)
-      #x = model(x)
       del model
       return x.sum()
   
