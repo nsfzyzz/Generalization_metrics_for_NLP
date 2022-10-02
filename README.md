@@ -1,9 +1,10 @@
 # NLP Metrics
 
-For Transformer training, we follow Vaswani et al. 2017. We develop our implementation based on an online repository. https://github.com/gordicaleksa/pytorch-original-transformer
-This code reproduces the results from Vaswani et al. 2017 with more easily configurable Transformer architectures.
+For Transformer training, we follow (:link: [Vaswani et al.](https://arxiv.org/abs/1706.03762)). We develop our implementation based on an (:link: [online repository](https://github.com/gordicaleksa/pytorch-original-transformer)).
+This code reproduces the results from Vaswani et al. with more easily configurable Transformer architectures.
 
-In addition to the HT-SR theory, we also evaluate generalization metrics from Dziugaite et al. 2020.
+In addition to the HT-SR theory, we also evaluate generalization metrics from (:link: [Dziugaite et al. 2020.](https://proceedings.neurips.cc/paper/2020/file/86d7c8a08b4aaa1bc7c599473f5dddda-Paper.pdf))
+
 
 ## Setup the environment
 
