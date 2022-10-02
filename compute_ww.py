@@ -42,6 +42,13 @@ def main(args):
     ww_metrics = {}     # key: epoch, value: results dict
     wandb.init(name = args.ckpt + '_ww')
 
+    if args.distribution == 'truncated_power_law':
+        distribution = 'E_TPL'
+    elif args.distribution == 'power_law':
+        distribution = 'PL'
+    elif args.distribution == 'exponential':
+        distribution = 'EXP'
+
     for epoch in range(args.starting_epoch, args.num_epochs+1):
         print(f"\nEPOCH {epoch}")
         ckpt = torch.load(os.path.join(args.ckpt,f"net_epoch_{epoch}.ckpt"), map_location='cpu')
@@ -50,37 +57,22 @@ def main(args):
         print("Start weight watcher analysis.")
 
         watcher = ww.WeightWatcher(model=baseline_transformer)
-        if args.continuous_estimate == 0:
-            details = watcher.analyze(
-                mp_fit=args.mp_fit,
-                randomize=args.randomize,
-                plot=args.save_plot,
-                savefig=args.result,
-                distribution=args.distribution,     # distribution is only for WeightWatcher2
-            )
-            summary = watcher.get_summary(details)
-            results = {'details':details, 'summary':summary}
-            ww_metrics[epoch] = results
+        details = watcher.analyze(
+            mp_fit=args.mp_fit,
+            randomize=args.randomize,
+            plot=args.save_plot,
+            savefig=args.result,
+            fit=distribution,     # distribution is only for WeightWatcher2
+        )
+        summary = watcher.get_summary(details)
+        results = {'details':details, 'summary':summary}
+        ww_metrics[epoch] = results
 
-            wandb.log(summary)
-
-        # Don't use this
-        else:
-            if not args.heuMax:
-                details, alphas_results, Ds_results = watcher.analyze(mp_fit=args.mp_fit, randomize=args.randomize, plot=args.save_plot, 
-                        savefig=args.result, continuous_estimate=float(args.continuous_estimate), fix_finger_histogram=args.fix_finger_histogram)
-            else:
-                details, alphas_results, Ds_results = watcher.analyze(mp_fit=args.mp_fit, randomize=args.randomize, plot=args.save_plot, 
-                        savefig=args.result, continuous_estimate=float(args.continuous_estimate), 
-                        heuristic_xmax=True, heuristic_xmax_factor=args.heuMax_factor, fix_finger_histogram=args.fix_finger_histogram)
-            summary = watcher.get_summary(details)
-
-            results = {'details':details, 'summary':summary, 'alphas': alphas_results, 'Ds': Ds_results}
-            ww_metrics[epoch] = results
+        wandb.log(summary)
     
     # Write all results into one file
-    with open(os.path.join(args.result, args.result_suffix), 'wb') as f:
-        pickle.dump(ww_metrics, f)
+    #with open(os.path.join(args.result, args.result_suffix), 'wb') as f:
+    #    pickle.dump(ww_metrics, f)
 
     print("Experiment finished. Save and exit.")
 
@@ -91,18 +83,12 @@ if __name__ == "__main__":
     parser.add_argument("result", type=str, help="path to save result")
     parser.add_argument("--result-suffix", type=str, default='results.pkl')
     parser.add_argument("--width", type=int, help="embedding dimension", default=64)
-    parser.add_argument("--dataset", type=str, help="dataset", choices=['IWSLT', 'WMT'], default='IWSLT')
+    parser.add_argument("--dataset", type=str, help="dataset", choices=['IWSLT', 'WMT'], default='WMT')
     parser.add_argument("--batch_size", type=int, help="batch size to create dataset", default=1500)
     parser.add_argument("--num-samples", type=int, help="number of samples", default=0)
     parser.add_argument("--save-plot", action='store_true', help="save plot of the weightwatcher results")
     parser.add_argument("--mp-fit", action='store_true', help="fitting the model using MP Fit.")
     parser.add_argument("--randomize", action='store_true', help="use randomized matrix to check correlation trap.")
-    parser.add_argument("--not-rescale", action='store_true', help="do not use rescale to solve a bug")
-    parser.add_argument("--continuous-estimate", default=0, help="use continuous estimate")
-    parser.add_argument("--heuMax", action='store_true', help="Use heuristic Max")
-    parser.add_argument("--heuMax-factor", default=0.8, type=float, help="use continuous estimate")
-    parser.add_argument("--fix-finger-histogram", action='store_true', help="use finger fix")
-    # distribution is only for WeightWatcher2
     parser.add_argument("--distribution", choices=["truncated_power_law", "power_law", "lognormal", "exponential"])
     parser.add_argument("--num-layers", type=int, help="number of Transformer layers", default=6)
     parser.add_argument("--num-epochs", type=int, help="number of epochs", default=20)

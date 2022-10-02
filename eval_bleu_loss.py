@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, default='IWSLT')
     parser.add_argument("--num-heads", type=int, help="number of Transformer layers", default=BASELINE_MODEL_NUMBER_OF_HEADS)
     parser.add_argument("--embedding-dimension", type=int, help="the dimension to save a checkpoint", default=BASELINE_MODEL_DIMENSION)
-    parser.add_argument("--efficient-eval", action='store_true', help="only evaluate the train BLEU to calculate the generalization gap", default=BASELINE_MODEL_DIMENSION)
+    parser.add_argument("--efficient-eval", action='store_true', help="only evaluate the train BLEU to calculate the generalization gap")
 
     args = parser.parse_args()
     

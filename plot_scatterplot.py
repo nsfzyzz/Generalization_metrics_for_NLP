@@ -62,7 +62,7 @@ def adjust_measure(metric, val, dataset_size):
         #return np.sqrt(value / m)
 
 # TODO: Move into a utils file
-def get_metric_bleu_df(experiment, distribution, adjust_measures_back, this_metric):
+def get_metric_bleu_df(experiment, distribution, adjust_measures_back, this_metric, bleu_from_logs=False):
     '''
     Constructs a DataFrame of length num_epochs.
     The columns are [epoch, id_bleu, ood_bleu, metric1, metric2, ...]
@@ -120,9 +120,9 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back, this_metr
         
         elif metric_file == 'ww':
             # Get from results.pkl
-            if distribution == "PL":
+            if distribution == "power_law":
                 FILE = os.path.join(experiment, "results_original_alpha.pkl")
-            elif distribution == "TPL":
+            elif distribution == "truncated_power_law":
                 FILE = os.path.join(experiment, "results.pkl")
             else:
                 raise ValueError('Unknown distribution.')
@@ -185,7 +185,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back, this_metr
     # The following code uses a very strange logic, but it basically uses another file to get the train BLEU score
     # So we just need to do the usual setting to get all the BLEU results to avoid these things when submitting the final code
 
-    if args.bleu_from_logs:
+    if bleu_from_logs:
         FILE = os.path.join(experiment, "bleu_loss.jsonl")
         if not os.path.exists(FILE):
             FILE = os.path.join(experiment, "bleu_loss_from_log.jsonl")
@@ -226,7 +226,7 @@ def get_metric_bleu_df(experiment, distribution, adjust_measures_back, this_metr
     
     ### Construct the DataFrame ###
     
-    if args.bleu_from_logs:
+    if bleu_from_logs:
         data = {'epoch': epochs, 'id_bleu': id_bleu_scores, 'id_bleu_train': id_bleu_train_scores, 'id_bleu_gap': id_bleu_gaps}
     else:
         data = {
@@ -258,7 +258,7 @@ if __name__ == '__main__':
     parser.add_argument("--dataset", type=str, choices=["WMT14", "IWSLT"], default="WMT14")
     parser.add_argument("--group", type=str, default="")
     parser.add_argument("--fitting_method", type=str, default="LR", choices=["LR", "ODR"])
-    parser.add_argument("--distribution", type=str, default="PL")
+    parser.add_argument("--distribution", type=str, default="power_law")
     parser.add_argument("--model_size_param", type=str, default="depth", choices=["width", "depth"])
     parser.add_argument("--adjust_measures_back", dest='adjust_measures_back', action='store_true', help='adjust the measure back using the dataset size (default: off)')
     parser.add_argument("--only_calculation", dest='only_calculation', action='store_true', help='only calculating the rank correlations without plotting the figures (default: off)')
@@ -267,13 +267,13 @@ if __name__ == '__main__':
     assert args.metric in METRIC_FILES.keys()
     assert args.bleu_type in ["id_bleu", "ood_bleu", "id_bleu_gap", "id_bleu_train", "id_loss_gap", "id_loss_train", "id_loss_val"]
     assert args.group in ["sample", "depth", "lr", "width"]
-    assert args.distribution in ["PL", "TPL", "EXP"]
+    assert args.distribution in ["power_law", "truncated_power_law", "exponential"]
 
     # Construct a DataFrame of length num_experiments
     # The columns are [id_bleu, ood_bleu, metric, sample, depth, lr, dropout]
     records = []
     for experiment in EXPERIMENTS[f"{args.dataset}_{args.model_size_param}"]:
-        metric_bleu_df = get_metric_bleu_df(experiment, args.distribution, args.adjust_measures_back, args.metric)
+        metric_bleu_df = get_metric_bleu_df(experiment, args.distribution, args.adjust_measures_back, args.metric, bleu_from_logs=args.bleu_from_logs)
         # Get the last three epochs' BLEU/metric
         average_length = 6
         
@@ -322,9 +322,9 @@ if __name__ == '__main__':
         plot_metric_name = 'E_TPL_lambda_adjusted'
         
     if plot_metric_name == 'ks_distance':
-        if args.distribution == 'PL':
+        if args.distribution == 'power_law':
             plot_metric_name = 'PL_ks_distance'
-        elif args.distribution == 'TPL':
+        elif args.distribution == 'truncated_power_law':
             plot_metric_name = 'E_TPL_ks_distance'
         
     plot_bleu_type_name = args.bleu_type

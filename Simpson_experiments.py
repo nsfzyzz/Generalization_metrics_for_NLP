@@ -1,6 +1,5 @@
 import os
 
-#CKPT_DIR = "/work/rkunani/pytorch-transformer/checkpoint_yaoqing"    
 CKPT_DIR = "/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson"
 
 EXPERIMENTS = {

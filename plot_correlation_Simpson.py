@@ -143,25 +143,6 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
     # Get BLEU scores
     id_bleu_scores, ood_bleu_scores = [], []
     FILE = os.path.join(checkpoint, "bleu_loss.jsonl")
-    if not os.path.exists(FILE):
-        FILE = os.path.join(checkpoint, "bleu_loss_from_log.jsonl")
-    
-    #########################################################################################################
-    
-    # The following code uses a very strange logic, but it basically uses another file to get the train BLEU score
-    # So we just need to do the usual setting to get all the BLEU results to avoid these things when submitting the final code
-    
-    EPOCH = 1   # Epochs are numbered 1-20
-    FILE_TRAIN = os.path.join(checkpoint, "bleu_loss_only_train.jsonl")
-    train_results = []
-    if os.path.exists(FILE_TRAIN):
-        with (open(FILE_TRAIN, "rb")) as file:
-            for line in file:
-                d = json.loads(line)
-                train_results.append((d[f'epoch{EPOCH}_id_train_bleu_score'])* 100)
-                EPOCH += 1
-    
-    #########################################################################################################
     
     EPOCH = 1   # Epochs are numbered 1-20
     with (open(FILE, "rb")) as file:
@@ -171,22 +152,20 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
             # and generalization metrics for which lower values are better
             if bleu_type == 'test':
                 id_bleu_scores.append(d[f'epoch{EPOCH}_id_bleu_score'] * 100 * -1.0)
-                #ood_bleu_scores.append(d[f'epoch{EPOCH}_ood_bleu_score'] * 100 * -1.0)
+                ood_bleu_scores.append(d[f'epoch{EPOCH}_ood_bleu_score'] * 100 * -1.0)
             elif bleu_type == 'gap':
-                if os.path.exists(FILE_TRAIN):
-                    id_bleu_scores.append(train_results[EPOCH-1] - d[f'epoch{EPOCH}_id_bleu_score']* 100)
-                else:
-                    id_bleu_scores.append((d[f'epoch{EPOCH}_id_train_bleu_score'] - d[f'epoch{EPOCH}_id_bleu_score'])* 100)
-                #ood_bleu_scores.append(d[f'epoch{EPOCH}_ood_bleu_score'] * 100 * -1.0)
+                #TODO: Results for OOD generalization gap
+                id_bleu_scores.append((d[f'epoch{EPOCH}_id_train_bleu_score'] - d[f'epoch{EPOCH}_id_bleu_score'])* 100)
+                ood_bleu_scores.append(d[f'epoch{EPOCH}_ood_bleu_score'] * 100 * -1.0)
             else:
                 raise ValueError('Bleu type not implemented.')
             EPOCH += 1
     ###
 
-    assert len(ww_metrics['log_spectral_norm']) == len(id_bleu_scores) #== len(ood_bleu_scores)
+    assert len(ww_metrics['log_spectral_norm']) == len(id_bleu_scores) == len(ood_bleu_scores)
 
     # Create a dataframe
-    data={'epoch': list(range(1, EPOCHS+1)), 'id_bleu': id_bleu_scores,} #'ood_bleu': ood_bleu_scores}
+    data={'epoch': list(range(1, EPOCHS+1)), 'id_bleu': id_bleu_scores, 'ood_bleu': ood_bleu_scores}
     data.update(ww_metrics)
     df = pd.DataFrame(data=data)
     ###
