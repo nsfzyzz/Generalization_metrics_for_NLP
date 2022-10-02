@@ -19,12 +19,15 @@ conda activate ww
 export PYTHONUNBUFFERED=1
 
 export OMP_NUM_THREADS=1
-python plot_scatterplot.py \
+python hyperparameter_correlation.py \
 --metric $1 \
 --bleu_type $2 \
 --group $3 \
 --distribution $4 \
---adjust_measures_back
+--fitting_method $5 \
+--dataset $6 \
+--model_size_param $7 $8 \
+--only_calculation \
 
 wait
 date
