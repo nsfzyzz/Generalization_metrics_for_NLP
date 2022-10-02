@@ -1,68 +1,34 @@
 '''
-Plots correlation between BLEU scores and metrics.
+This file calculates time-wise correlation between BLEU scores and metrics.
 '''
-import argparse, pickle, json, os, re
-import matplotlib.pyplot as plt
-import seaborn as sns
+import argparse, pickle, json, os
 import pandas as pd
 import numpy as np
 from scipy.stats import spearmanr
-from Simpson_metrics import METRIC_TYPES, METRIC_FILES
+from metrics import METRIC_FILES
 import pickle
+
 
 def get_corr_df(metrics_df):
     '''
     Correlations for a single checkpoint
     '''
     correlations = []
-    for metric, metric_type in METRIC_TYPES.items():
+    for metric, _ in METRIC_FILES.items():
         # TODO: If doing phases, need to change this to calculate correlation within each phase
         # corr, _ = spearmanr(metrics_df['ood_bleu'], metrics_df[metric])
         corr, _ = spearmanr(metrics_df['id_bleu'], metrics_df[metric])
         if metric == 'rand_distance':
             corr = corr * -1.0
-        correlations.append((metric, metric_type, corr))
+        correlations.append((metric, corr))
     
     data = list(zip(*correlations))     # list of length 3: element 0 is metric names, element 1 is metric types, element 2 is correlations
     corr_df = pd.DataFrame(data={
         'metric': data[0],
-        'type': data[1],
         'correlation': data[2]
     })
     return corr_df
 
-def plot_correlation_single(checkpoint, metrics_df):
-    '''
-    Plots the correlations for a single checkpoint
-    '''
-    # TODO: update this to include depth and LR
-    num_samples = re.search("sample_(\d+)", checkpoint).group(1)
-    dropout = "no-dropout" if "dropout" in checkpoint else "normal"
-    id = "WMT" if "WMT" in checkpoint else "IWSLT"
-    
-    fig, ax = plt.subplots(figsize=(3,6), dpi=150)
-    fig.suptitle(f"num_samples: {num_samples}\ndropout: {dropout}")
-
-    corr_df = get_corr_df(metrics_df)
-
-    sns.barplot(
-        data=corr_df,
-        x='correlation',
-        y='metric',
-        hue='type',
-        palette='deep',     # hue colors
-        ax=ax,
-        orient='h',
-        order=corr_df.sort_values('correlation', ascending=False)['metric'],
-        color='tab:blue',
-    )
-    ax.set_xlim([-1.0, 1.0])
-    ax.legend(prop={'size': 6})
-    plt.savefig(
-        f"plots/ood_correlations/id-{id}_num_samples-{num_samples}_dropout-{dropout}",
-        # f"plots/id_correlations/id-{id}_num_samples-{num_samples}_dropout-{dropout}",
-        bbox_inches='tight'
-    )
 
 def get_metrics_df(checkpoint, bleu_type = 'test'):
     '''
@@ -90,7 +56,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
     with open(FILE_ROBUST, "rb") as file:
         results_robust = pickle.load(file)
     
-    for metric, _ in METRIC_TYPES.items():
+    for metric, _ in METRIC_FILES.items():
         metric_vals = []
 
         if METRIC_FILES[metric] == 'results':
@@ -107,7 +73,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
                     else:
                         # Fill in missing metrics with null (not all checkpoints have all metrics calculated)
                         metric_vals.append(np.nan)
-                        print(f"{FILE}\n\tepoch {epoch} missing {metric}")
+                        print(f"{FILE_PL}\n\tepoch {epoch} missing {metric}")
             elif metric == 'exp_dist_exponent':
                 d = results_EXP
                 for epoch in epochs:
@@ -123,7 +89,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
                         metric_vals.append(d[epoch]['details'][metric].mean())
                     else:
                         metric_vals.append(np.nan)
-                        print(f"{FILE}\n\tepoch {epoch} missing {metric}")
+                        print(f"{FILE_TPL}\n\tepoch {epoch} missing {metric}")
         
         elif METRIC_FILES[metric] == 'robust':
             margin_metrics = results_robust
@@ -133,7 +99,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
                 else:
                     # Fill in missing metrics with null (not all checkpoints have all metrics calculated)
                     metric_vals.append(np.nan)
-                    print(f"{FILE}\n\tepoch {epoch} missing {metric}")
+                    print(f"{FILE_ROBUST}\n\tepoch {epoch} missing {metric}")
         
         else:
             print(f"{metric} not found")
@@ -175,49 +141,17 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint_dir", type=str, default="")
-    parser.add_argument("--id", type=str, default="")
+    parser.add_argument("--id", type=str, default="WMT")
     parser.add_argument("--bleu_type", type=str, default='test', choices=['test', 'gap'])
 
     args = parser.parse_args()
-
-    assert args.id
     ood = 'WMT' if args.id == 'IWSLT' else 'IWSLT'
-    
-    if args.checkpoint_dir:
-        # Plot correlations for one checkpoint
-        metrics_df = get_metrics_df(args.checkpoint_dir, args.bleu_type)
-        plot_correlation_single(args.checkpoint_dir, metrics_df)
-    
-    else:
-        # Plot correlations across all experiments
-        from Simpson_experiments import EXPERIMENTS
-        exps = EXPERIMENTS[f"{args.id}"] #+ EXPERIMENTS[ood]
-        all_metrics = [get_metrics_df(exp, args.bleu_type) for exp in exps]
-        corr_dfs = [get_corr_df(metric_df) for metric_df in all_metrics]
-        all_corrs = pd.concat(corr_dfs)
 
-        # Make plot
-        fig, ax = plt.subplots(figsize=(6,10), dpi=150)
-        fig.suptitle("Distribution of Rank Correlation\nbetween ID BLEU Score and Generalization Metric")
-        
-        pickle.dump(all_corrs, open(f'results/Simpson_correlation_{args.id}_{args.bleu_type}.pkl', "wb"))
-        
-        sns.boxplot(
-            data=all_corrs,
-            x='correlation',
-            y='metric',
-            hue='type',
-            palette='pastel',     # hue colors
-            ax=ax,
-            orient='h',
-            order=all_corrs.groupby("metric")['correlation'].median().sort_values(ascending=False).index,
-        )
-        ax.set_xlim([-1.0, 1.0])
-        ax.legend(prop={'size': 6})
-        plt.savefig(
-            f"plots/id_correlations_{args.id}_{args.bleu_type}",
-            # f"plots/ood_correlations/{args.id}",
-            # f"plots/id_correlations/{args.id}",
-            bbox_inches='tight'
-        )
+    # Plot correlations across all experiments
+    from time_wise_experiments import EXPERIMENTS
+    exps = EXPERIMENTS[f"{args.id}"] #+ EXPERIMENTS[ood]
+    all_metrics = [get_metrics_df(exp, args.bleu_type) for exp in exps]
+    corr_dfs = [get_corr_df(metric_df) for metric_df in all_metrics]
+    all_corrs = pd.concat(corr_dfs)
+    
+    pickle.dump(all_corrs, open(f'results/Simpson_correlation_{args.id}_{args.bleu_type}.pkl', "wb"))

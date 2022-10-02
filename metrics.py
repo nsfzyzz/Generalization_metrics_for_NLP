@@ -23,7 +23,7 @@ METRIC_FILES = {
     'PACBAYES_MAG_ORIG': 'robust',
     'PACBAYES_MAG_FLATNESS': 'robust',
     'W_CKA': 'robust',
-    # 'FRO_OVER_SPEC': 'robust',
+    # 'FRO_OVER_SPEC': 'robust',  # Repeated with Stable Rank
     'LOG_SPEC_INIT_MAIN': 'robust',
     'LOG_SPEC_ORIG_MAIN': 'robust',
 
@@ -35,7 +35,7 @@ METRIC_FILES = {
     'PL_alpha': 'ww',
     'TPL_alpha': 'ww',
     'exponent': 'ww',
-    'exp_dist_exponent': 'ww',     # missing
+    'exp_dist_exponent': 'ww',
     'KS_distance': 'ww',
     'tail_mean_vec_entropy': 'ww',
     'bulk_mean_vec_entropy': 'ww',
@@ -43,9 +43,9 @@ METRIC_FILES = {
     'rand_distance': 'ww',
     'alpha_weighted': 'ww',
     'log_alpha_norm': 'ww',
-    #'logdet_tpl_per_layer': 'ww',
+    #'logdet_tpl_per_layer': 'ww', # Testing this combined measure.
     'exponent_adjusted': 'ww',
     
     # combined metrics calculated from existing ones
-    #'logdet_tpl': 'combine'
+    #'logdet_tpl': 'combine'  # Testing this combined measure.
 }

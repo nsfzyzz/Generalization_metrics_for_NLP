@@ -1,10 +1,7 @@
 """
-    Notes:
-        * I won't add model checkpoint averaging as mentioned in the paper - it just feels like an arbitrary heuristic
-         and it won't add anything to the learning experience this repo aims to provide.
-
+Adapted from "Pytorch Original Transformer" by Aleksa Gordić
+https://github.com/gordicaleksa/pytorch-original-transformer
 """
-
 
 import argparse
 import time
@@ -13,8 +10,6 @@ import time
 import torch
 from torch import nn
 from torch.optim import Adam
-#from torch.utils.tensorboard import SummaryWriter
-
 
 from utils.optimizers_and_distributions import CustomLRAdamOptimizer, LabelSmoothingDistribution
 from models.definitions.transformer_model import Transformer
