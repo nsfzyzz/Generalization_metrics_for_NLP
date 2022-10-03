@@ -25,7 +25,7 @@ def get_corr_df(metrics_df):
     data = list(zip(*correlations))     # list of length 3: element 0 is metric names, element 1 is metric types, element 2 is correlations
     corr_df = pd.DataFrame(data={
         'metric': data[0],
-        'correlation': data[2]
+        'correlation': data[1]
     })
     return corr_df
 
@@ -59,7 +59,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
     for metric, _ in METRIC_FILES.items():
         metric_vals = []
 
-        if METRIC_FILES[metric] == 'results':
+        if METRIC_FILES[metric] == 'ww':
             if metric in ['PL_alpha', 'rand_distance', 'mp_softrank', 'PL_KS_distance', 'alpha_weighted', 'log_alpha_norm', 'stable_rank']:
                 for epoch in epochs:
                     results_metrics = results_PL[epoch]
@@ -74,17 +74,19 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
                         # Fill in missing metrics with null (not all checkpoints have all metrics calculated)
                         metric_vals.append(np.nan)
                         print(f"{FILE_PL}\n\tepoch {epoch} missing {metric}")
-            elif metric == 'exp_dist_exponent':
+            elif metric == 'EXP_lambda':
                 d = results_EXP
                 for epoch in epochs:
                     metric_vals.append(d[epoch]['details']['exponent'].mean())
             else:
                 d = results_TPL
                 for epoch in epochs:
-                    if metric == 'ETPL_KS_distance':
+                    if metric == 'E_TPL_KS_distance':
                         metric_vals.append(d[epoch]['details']['D'].mean())
-                    elif metric == 'TPL_alpha':
+                    elif metric == 'E_TPL_beta':
                         metric_vals.append(d[epoch]['details']['alpha'].mean())
+                    elif metric == 'E_TPL_lambda':
+                        metric_vals.append(d[epoch]['details']['exponent'].mean())
                     elif metric in d[epoch]['details']:
                         metric_vals.append(d[epoch]['details'][metric].mean())
                     else:
@@ -127,7 +129,7 @@ def get_metrics_df(checkpoint, bleu_type = 'test'):
                 raise ValueError('Bleu type not implemented.')
             EPOCH += 1
     ###
-
+        
     assert len(ww_metrics['log_spectral_norm']) == len(id_bleu_scores) == len(ood_bleu_scores)
 
     # Create a dataframe
@@ -143,15 +145,33 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--id", type=str, default="WMT")
     parser.add_argument("--bleu_type", type=str, default='test', choices=['test', 'gap'])
+    #TODO: update the WW results using WeightWatcher 0.5.6
+    #parser.add_argument("--reproduce", action='store_true')
 
     args = parser.parse_args()
     ood = 'WMT' if args.id == 'IWSLT' else 'IWSLT'
 
     # Plot correlations across all experiments
-    from time_wise_experiments import EXPERIMENTS
+    from experiments_time_wise import EXPERIMENTS
     exps = EXPERIMENTS[f"{args.id}"] #+ EXPERIMENTS[ood]
     all_metrics = [get_metrics_df(exp, args.bleu_type) for exp in exps]
     corr_dfs = [get_corr_df(metric_df) for metric_df in all_metrics]
     all_corrs = pd.concat(corr_dfs)
     
-    pickle.dump(all_corrs, open(f'results/Simpson_correlation_{args.id}_{args.bleu_type}.pkl', "wb"))
+    rank_correlations_aggregated = {}
+
+    # Converting all results into an aggregated array
+    for key, val in zip(all_corrs['metric'].values, all_corrs['correlation'].values):
+        if key not in rank_correlations_aggregated:
+            rank_correlations_aggregated[key] = [val]
+        else:
+            rank_correlations_aggregated[key].append(val)
+    
+    # Remove nan's which are failed measurements
+    for key in rank_correlations_aggregated.keys():
+        rank_correlations_aggregated[key] = [x for x in rank_correlations_aggregated[key] if not np.isnan(x)]
+        
+    with open(f'results/plot_results_{args.bleu_type}_Simpson_{args.id}.pkl', 'wb') as f:
+        pickle.dump(rank_correlations_aggregated, f)
+    
+    #pickle.dump(all_corrs, open(f'results/Simpson_correlation_{args.id}_{args.bleu_type}.pkl', "wb"))

@@ -1,3 +1,8 @@
+"""
+Adapted from "Pytorch Original Transformer" by Aleksa Gordić
+https://github.com/gordicaleksa/pytorch-original-transformer
+"""
+
 import time
 import os
 import enum

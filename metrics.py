@@ -33,10 +33,11 @@ METRIC_FILES = {
     'mp_softrank': 'ww',
     'stable_rank': 'ww',
     'PL_alpha': 'ww',
-    'TPL_alpha': 'ww',
-    'exponent': 'ww',
-    'exp_dist_exponent': 'ww',
-    'KS_distance': 'ww',
+    'E_TPL_beta': 'ww',
+    'E_TPL_lambda': 'ww',
+    'EXP_lambda': 'ww',
+    'PL_KS_distance': 'ww',
+    'E_TPL_KS_distance': 'ww',
     'tail_mean_vec_entropy': 'ww',
     'bulk_mean_vec_entropy': 'ww',
     'entropy': 'ww',
@@ -44,7 +45,7 @@ METRIC_FILES = {
     'alpha_weighted': 'ww',
     'log_alpha_norm': 'ww',
     #'logdet_tpl_per_layer': 'ww', # Testing this combined measure.
-    'exponent_adjusted': 'ww',
+    #'exponent_adjusted': 'ww', # Testing this combined measure.
     
     # combined metrics calculated from existing ones
     #'logdet_tpl': 'combine'  # Testing this combined measure.
