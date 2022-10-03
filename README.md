@@ -30,7 +30,7 @@ python create_experiments.py
 
 You can check the examples of PL and E-TPL fittings. Take a look at `visualization/Visualize_example_WW_layers.ipynb`.
 
-![Block](visualization/TPL_vs_PL_mediocre_1.png)
+![Block](visualization/TPL_vs_PL_mediocre.png)
 
 ### Result 2. Scatter plots.
 
