@@ -41,7 +41,6 @@ $CKPTPATH \
 --width $width \
 --dataset WMT \
 --num-samples $sample \
---test_robust_measures \
 --calculate_margin \
 --calculate_pac_bayes \
 --num-layers $depth \

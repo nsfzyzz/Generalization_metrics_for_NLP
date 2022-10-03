@@ -27,14 +27,12 @@ do
 
                     # This is for PL
                     for metric in 'PL_alpha' 'PL_KS_distance' 'mp_softrank' 'log_norm' 'log_spectral_norm' 'PARAM_NORM' 'FRO_DIST' 'DIST_SPEC_INIT' 'PATH_NORM' 'stable_rank' 'alpha_weighted' 'log_alpha_norm' 'INVERSE_MARGIN' 'LOG_PROD_OF_SPEC_OVER_MARGIN' 'LOG_SUM_OF_SPEC_OVER_MARGIN' 'LOG_PROD_OF_FRO_OVER_MARGIN' 'LOG_SUM_OF_FRO_OVER_MARGIN' 'PATH_NORM_OVER_MARGIN' 'PACBAYES_INIT' 'PACBAYES_ORIG' 'PACBAYES_FLATNESS' 'PACBAYES_MAG_INIT' 'PACBAYES_MAG_ORIG' 'PACBAYES_MAG_FLATNESS' 
-                    #for metric in 'PL_KS_distance'
                     do
                         sbatch scripts/hyperparameter_correlation.sh $metric $bleu_type $group power_law $fitting_method $dataset $calculation_parameter $size_param $adjust_measure
                     done
                     
                     # This is for TPL
                     for metric in  'E_TPL_lambda' 'E_TPL_KS_distance' 'E_TPL_beta' 'alpha_weighted' 'log_alpha_norm'
-                    #for metric in 'E_TPL_KS_distance'
                     do
                         sbatch scripts/hyperparameter_correlation.sh $metric $bleu_type $group truncated_power_law $fitting_method $dataset $calculation_parameter $size_param $adjust_measure
                     done
@@ -42,7 +40,6 @@ do
 
                     # This is for EXP
                     for metric in 'EXP_lambda'
-                    #for metric in
                     do
                         sbatch scripts/hyperparameter_correlation.sh $metric $bleu_type $group exponential $fitting_method $dataset $calculation_parameter $size_param $adjust_measure
                     done
