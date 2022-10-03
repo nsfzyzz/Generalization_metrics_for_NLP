@@ -14,17 +14,9 @@ Activate the environment.
 conda activate NLP_metrics
 ```
 
-Step 2. Download data.
+Step 2. Download data and pretrained results.
 ```
-./cp_data.sh
-unzip data.zip
-```
-
-Step 3. Download the results on pretrained models. Please create a path to save all the results tested on pretrained models.
-```
-cd checkpoint
-./cp_results.sh
-unzip pretrained_results.zip
+./download_data.sh
 ```
 
 ## Generate the experiment files.
@@ -38,13 +30,19 @@ python create_experiments.py
 
 You can check the examples of PL and E-TPL fittings. Take a look at `visualization/Visualize_example_WW_layers.ipynb`.
 
+![Block](visualization/TPL_vs_PL_mediocre_1.pdf)
+
 ### Result 2. Scatter plots.
 
 Then, you can reproduce the scatter plots that compare the generalization metrics with the BLEU scores. Check `visualization/reproduce_scatterplot.ipynb`.
 
+![Block](visualization/Best_ETPL_Lambda.png)
+
 ### Result 3. Box plots.
 
 You can also reproduce the box plots that rank the generalization metrics considered in the paper. 
+
+![Block](visualization/Model_quality_vs_generalization_gap.png)
 
 First, use the following commands to generate the time-wise correlations. The argument `--bleu_type` can be used to choose the correlation with the test BLEU scores or the generalization gap.
 ```
@@ -62,3 +60,21 @@ Now, you should have all the results. Check `visualization/reproduce_scatterplot
 ## Reproduce all the training results.
 
 Fully reproducing our results requires :link: [slurm](https://slurm.schedmd.com/) and about 2T storage.
+
+## Citation
+
+We appreciate it if you would please cite the following paper if you found the repository useful for your work:
+
+```
+@TECHREPORT{yang2022evaluating,
+  author =       {Yang, Yaoqing and Theisen, Ryan and Hodgkinson, Liam and Gonzalez, Joseph E and Ramchandran, Kannan and Martin, Charles H and Mahoney, Michael W},
+  title =        {Evaluating natural language processing models with generalization metrics that do not need access to any training or testing data},
+  number =       {Preprint: arXiv:2202.02842},
+  year =         {2022},
+}
+```
+
+License
+----
+
+MIT
