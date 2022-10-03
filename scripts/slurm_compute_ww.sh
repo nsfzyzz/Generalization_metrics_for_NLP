@@ -3,10 +3,9 @@
 #SBATCH -p rise             # partition (queue)
 #SBATCH -N 1                # number of nodes requested
 #SBATCH -n 1                # number of tasks (i.e. processes)
-#SBATCH --cpus-per-task=8   # number of cores per task
-#SBATCH --gres=gpu:1        # number of GPUs (should match -n)
-##SBATCH --nodelist=ace,manchester,bombe,como,pavia,luigi,zanino    # if you need specific nodes
-#SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas,zanino,luigi,como,pavia,ace,bombe
+#SBATCH --cpus-per-task=2   # number of cores per task
+#SBATCH --nodelist=havoc
+##SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas
 #SBATCH -t 2-00:00          # time requested (D-HH:MM)
 #SBATCH -D /work/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson
 #SBATCH -o slurm_logs/slurm.%N.%j..out # STDOUT
@@ -17,10 +16,23 @@ date
 echo starting job...
 source ~/.bashrc
 conda activate NLP_metrics
+source normalize_powerlaw.sh
 export PYTHONUNBUFFERED=1
+export OMP_NUM_THREADS=1
 
+#distribution=truncated_power_law
+#result_file=results.pkl
+#config_file=ww_tpl_config
 
-cfg=$(sed -n "$SLURM_ARRAY_TASK_ID"p scripts/bleu_config.txt)
+#distribution=exponential
+#result_file=results_exponential.pkl
+#config_file=ww_exponential_config
+
+distribution=power_law
+result_file=results_original_alpha.pkl
+config_file=ww_pl_config
+
+cfg=$(sed -n "$SLURM_ARRAY_TASK_ID"p scripts/"$config_file".txt)
 sample=$(echo $cfg | cut -f 1 -d ' ')
 depth=$(echo $cfg | cut -f 2 -d ' ')
 width=$(echo $cfg | cut -f 3 -d ' ')
@@ -32,14 +44,18 @@ CKPTPATH=/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sam
 echo $CKPTPATH
 #mkdir $CKPTPATH
 
-srun -N 1 -n 1 python eval_bleu_loss.py \
---checkpoint_dir $CKPTPATH \
---max_batches 200 \
+python compute_ww.py \
+$CKPTPATH $CKPTPATH \
+--result-suffix $result_file \
+--width $width \
 --dataset WMT \
---num_epochs 20 \
---starting_epoch 1 \
---num-heads $head \
---embedding-dimension $width 
+--num-samples $sample \
+--num-layers $depth \
+--mp-fit --randomize \
+--distribution $distribution \
+--num-epochs 20 \
+--starting-epoch 1 \
+--num-heads $head &
 
 wait
 date

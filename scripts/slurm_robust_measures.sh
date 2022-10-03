@@ -1,13 +1,11 @@
 #!/bin/bash
-#SBATCH --array=1-8
-##SBATCH --array=1,10,20,22,31,41,43,52,62,64,73,83,85,94,104,106,115,125
+#SBATCH --array=1-200
 #SBATCH -p rise             # partition (queue)
 #SBATCH -N 1                # number of nodes requested
 #SBATCH -n 1                # number of tasks (i.e. processes)
 #SBATCH --cpus-per-task=8   # number of cores per task
 #SBATCH --gres=gpu:1        # number of GPUs (should match -n)
 ##SBATCH --nodelist=ace,manchester,bombe,como,pavia,luigi,zanino    # if you need specific nodes
-##SBATCH --nodelist=ace,manchester,bombe
 #SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas,zanino,luigi,como
 #SBATCH -t 2-00:00          # time requested (D-HH:MM)
 #SBATCH -D /work/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson
@@ -18,7 +16,7 @@ hostname
 date
 echo starting job...
 source ~/.bashrc
-conda activate pytorch-transformer
+conda activate NLP_metrics
 export PYTHONUNBUFFERED=1
 
 

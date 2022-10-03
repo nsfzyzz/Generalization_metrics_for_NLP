@@ -19,9 +19,9 @@ Step 2. Download data and pretrained results.
 ./download_data.sh
 ```
 
-## Generate the experiment files.
+## Generate the experiment files. Change the checkpoint repository if necessary.
 ```
-python create_experiments.py
+python create_experiments.py --CKPT_DIR checkpoint/
 ```
 
 ## Reproduce the figures shown in paper
@@ -59,7 +59,25 @@ Now, you should have all the results. Check `visualization/reproduce_scatterplot
 
 ## Reproduce all the training results.
 
-Fully reproducing our results requires :link: [slurm](https://slurm.schedmd.com/) and about 2T storage.
+Fully reproducing our results requires :link: [slurm](https://slurm.schedmd.com/) and about 6T storage.
+
+Step 1. Generate slurm configuration files. Check the `scripts/generate_script.ipynb` to generate the training and evaluation slurm configrations.
+
+Step 2. Submit the slurm files. Remember to change the directories in the slurm file and make a slurm log folder.
+```
+mkdir slurm_logs
+```
+
+For training, do the following.
+```
+sbatch ./scripts/slurm_train_models.sh
+```
+Step 3. After generating all the evaluation files, you will get all the json and pickle files similar to the `checkpoint.zip`. Then, you can draw the scatter plots and calculate the rank correlations using the following commands.
+```
+./scripts/run_plot_scatterplot.sh
+./scripts/run_hyperparameter_correlation.sh
+```
+After that, you will get all the plots and rank correlation results similar to the `plots.zip` and `results.zip`.
 
 ## Citation
 
