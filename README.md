@@ -30,7 +30,7 @@ python create_experiments.py --CKPT_DIR checkpoint/
 
 You can check the examples of PL and E-TPL fittings. Take a look at `visualization/Visualize_example_WW_layers.ipynb`.
 
-![Block](<img src="visualization/TPL_vs_PL_mediocre.png"; img style="height: 20px">)
+<img src="visualization/TPL_vs_PL_mediocre.png" alt="drawing" width="200"/>
 
 ### Result 2. Scatter plots.
 
