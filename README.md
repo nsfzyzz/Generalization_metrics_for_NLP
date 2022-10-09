@@ -72,6 +72,14 @@ For training, do the following.
 ```
 sbatch ./scripts/slurm_train_models.sh
 ```
+For evaluation, use the following bash files.
+```
+sbatch ./scripts/slurm_eval_bleu.sh
+sbatch ./scripts/slurm_compute_ww.sh
+sbatch ./scripts/slurm_robust_measures.sh
+```
+Notice that we evaluate PL, E-TPL and EXP fittings. To select the distribution, change L23-33 in the file `slurm_compute_ww.sh`.
+
 Step 3. After generating all the evaluation files, you will get all the json and pickle files similar to the `checkpoint.zip`. Then, you can draw the scatter plots and calculate the rank correlations using the following commands.
 ```
 ./scripts/run_plot_scatterplot.sh
