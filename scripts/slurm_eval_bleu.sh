@@ -8,7 +8,7 @@
 ##SBATCH --nodelist=ace,manchester,bombe,como,pavia,luigi,zanino    # if you need specific nodes
 #SBATCH --exclude=blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas,zanino,luigi,como,pavia,ace,bombe
 #SBATCH -t 2-00:00          # time requested (D-HH:MM)
-#SBATCH -D /work/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson
+#SBATCH -D /data/yyaoqing/Generalization_metrics_for_NLP/
 #SBATCH -o slurm_logs/slurm.%N.%j..out # STDOUT
 #SBATCH -e slurm_logs/slurm.%N.%j..err # STDERR
 pwd
@@ -28,7 +28,7 @@ lr=$(echo $cfg | cut -f 4 -d ' ')
 dropout=$(echo $cfg | cut -f 5 -d ' ')
 head=$(echo $cfg | cut -f 6 -d ' ')
 
-CKPTPATH=/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson/WMT14_sample"$sample"_depth"$depth"_width"$width"_lr"$lr"_dropout"$dropout"
+CKPTPATH=/data/yyaoqing/Generalization_metrics_for_NLP/checkpoint/WMT14_sample"$sample"_depth"$depth"_width"$width"_lr"$lr"_dropout"$dropout"
 echo $CKPTPATH
 #mkdir $CKPTPATH
 

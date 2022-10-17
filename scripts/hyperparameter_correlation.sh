@@ -7,7 +7,7 @@
 #SBATCH --nodelist=havoc    # if you need specific nodes
 ##SBATCH --exclude=como,manchester,blaze,flaminio,freddie,r[1-6,8-16],havoc,steropes,atlas
 #SBATCH -t 0-01:00          # time requested (D-HH:MM)
-#SBATCH -D /work/yyaoqing/Good_vs_bad_data/NLP_metrics_Simpson      # working directory
+#SBATCH -D /data/yyaoqing/Generalization_metrics_for_NLP/      # working directory
 #SBATCH -o slurm_logs/slurm.%N.%j..out # STDOUT
 #SBATCH -e slurm_logs/slurm.%N.%j..err # STDERR
 pwd
