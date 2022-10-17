@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Two datasets
-datasets=("WMT14" "IWSLT")
-size_params=("depth" "depth")
+# WMT data
+datasets=("WMT14")
+size_params=("depth")
 
 # For each data, we plot the scatter plots for both the bleu scores and the generalization gap (train bleu - test bleu)
 bleu_types=("id_bleu" "id_bleu_gap")

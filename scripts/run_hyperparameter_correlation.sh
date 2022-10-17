@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# There are three hyperparameter grids, two for WMT14 and one for IWSLT
-datasets=("WMT14" "IWSLT" "WMT14")
-size_params=("depth" "depth" "width")
+# Two grids
+datasets=("WMT14" "WMT14")
+size_params=("depth" "width")
 
 # For each grid, we calculate both the bleu scores and the generalization gap (train bleu - test bleu)
 bleu_types=("id_bleu" "id_bleu_gap")
