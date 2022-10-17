@@ -3,11 +3,11 @@ wget -O checkpoint.zip https://www.dropbox.com/s/i3i0zq1m7o10kbw/checkpoint.zip?
 unzip checkpoint.zip -d checkpoint/
 
 ### Download the rank correlation results for the checkpoints ###
-wget -O results.zip https://www.dropbox.com/s/yr4xdlm5bkw1aa6/results.zip?dl=0
+wget -O results.zip https://www.dropbox.com/s/5h2z9o2c02lstfa/results.zip?dl=0
 unzip results.zip -d results/
 
 ### Download the scatter plots ###
-wget -O plots.zip https://www.dropbox.com/s/dnf921nsdz33p9m/plots.zip?dl=0
+wget -O plots.zip https://www.dropbox.com/s/x0ydmsf7dlzhtem/plots.zip?dl=0
 unzip plots.zip -d plots/
 
 ### Download the processed data for Transformer training ###
