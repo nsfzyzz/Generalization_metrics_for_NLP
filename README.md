@@ -21,8 +21,9 @@ Step 2. Download data and pretrained results.
 
 ## Generate the experiment files. Change the checkpoint repository if necessary.
 ```
-python create_experiments.py --CKPT_DIR checkpoint/
+python create_experiment.py --CKPT_DIR <your_checkpoint_directory>
 ```
+For example, on my machine, the checkpoint directory is `/data/yyaoqing/Generalization_metrics_for_NLP/checkpoint/`.
 
 ## Reproduce the figures shown in paper
 
@@ -55,7 +56,7 @@ Second, Generate the correlation results when a single hyperparameter is varied.
 python aggregate_hyperparameter_correlation.py
 ```
 
-Now, you should have all the results. Check `visualization/reproduce_scatterplot.ipynb` to see the box plots.
+Now, you should have all the results. Check `visualization/calculate_rank_correlation_with_colored_groups.ipynb` to see the box plots.
 
 ## Reproduce all the training results.
 

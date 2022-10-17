@@ -39,7 +39,7 @@ def generate_WMT_width_experiments(fwrite):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--CKPT_DIR", type=str, default = '/work/yyaoqing/Good_vs_bad_data/checkpoint/NMT_epochs/Simpson', 
+    parser.add_argument("--CKPT_DIR", type=str, default = '/data/yyaoqing/Generalization_metrics_for_NLP/checkpoint', 
                         help="path to save all the checkpoints")
     args = parser.parse_args()
 
