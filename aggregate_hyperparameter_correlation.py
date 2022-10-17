@@ -3,8 +3,8 @@ import os
 import pickle
 import numpy as np
 
-datasets=['WMT14', 'IWSLT', 'WMT14'] 
-size_params = ['depth', 'depth', 'width']
+datasets=['WMT14', 'WMT14'] 
+size_params = ['depth', 'width']
 adjust_measures_suffixs = ['normalized_by_samples', 'not_normalized_by_samples']
 bleu_types = ['id_bleu', 'id_bleu_gap']
 
@@ -35,8 +35,6 @@ for bleu_type in bleu_types:
                     results[metric] = results_this_metric[group]
 
                     if bleu_type == 'id_bleu':
-                        #print('negate the results!')
-                        # Negate the correlation because we want the metrics to be negatively correlated
+                        # Negate the correlation because metrics should be negatively correlated
                         results[metric] = [-x for x in results[metric] if not np.isnan(x)]
-                        #print(results[metric])
                 pickle.dump(results, open(f'results/{correlation_file}', 'wb'))

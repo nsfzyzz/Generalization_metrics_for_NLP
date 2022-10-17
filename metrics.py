@@ -44,9 +44,4 @@ METRIC_FILES = {
     'rand_distance': 'ww',
     'alpha_weighted': 'ww',
     'log_alpha_norm': 'ww',
-    #'logdet_tpl_per_layer': 'ww', # Testing this combined measure.
-    #'exponent_adjusted': 'ww', # Testing this combined measure.
-    
-    # combined metrics calculated from existing ones
-    #'logdet_tpl': 'combine'  # Testing this combined measure.
 }

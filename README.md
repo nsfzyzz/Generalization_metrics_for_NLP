@@ -1,7 +1,5 @@
 # NLP metrics
-This repository contains the code to reproduce the results from the paper :link: [Evaluating natural language processing models with generalization metrics that do not need access to any training or testing data.](https://arxiv.org/pdf/2202.02842.pdf) Our main results are that metrics from the :link: [HT-SR theory](https://github.com/CalculatedContent/WeightWatcher) can predict the generalization of NLP models. Also, unlike existing generalization metrics that focus on the "generalization gap", the HT-SR theory can predict the quality of NLP models, e.g., measured by the test-time BLEU scores when the NLP task is neural machine translation.
-
-We mainly study Transformers in this paper. For Transformer training, we follow :link: [Vaswani et al.](https://arxiv.org/abs/1706.03762). We develop our implementation based on an :link: [online repository](https://github.com/gordicaleksa/pytorch-original-transformer). This code reproduces the results from Vaswani et al. with more easily configurable Transformer architectures. In addition to the HT-SR theory, we also evaluate generalization metrics from :link: [Dziugaite et al. 2020.](https://proceedings.neurips.cc/paper/2020/file/86d7c8a08b4aaa1bc7c599473f5dddda-Paper.pdf) and :link: [Jiang et al. 2019.](https://arxiv.org/abs/1912.02178)
+This repository contains the code to reproduce the results for the ICLR submission "Evaluating natural language processing models with generalization metrics that do not need access to any training or testing data".
 
 ## Setup the environment
 
@@ -23,7 +21,7 @@ Step 2. Download data and pretrained results.
 ```
 python create_experiment.py --CKPT_DIR <your_checkpoint_directory>
 ```
-For example, on my machine, the checkpoint directory is `/data/yyaoqing/Generalization_metrics_for_NLP/checkpoint/`.
+For example, on my machine, the checkpoint directory is `/data/user_name/Generalization_metrics_for_NLP/checkpoint/`.
 
 ## Reproduce the figures shown in paper
 
@@ -87,21 +85,3 @@ Step 3. After generating all the evaluation files, you will get all the json and
 ./scripts/run_hyperparameter_correlation.sh
 ```
 After that, you will get all the plots and rank correlation results similar to the `plots.zip` and `results.zip`.
-
-## Citation
-
-We appreciate it if you would please cite the following paper if you found the repository useful for your work:
-
-```
-@TECHREPORT{yang2022evaluating,
-  author =       {Yang, Yaoqing and Theisen, Ryan and Hodgkinson, Liam and Gonzalez, Joseph E and Ramchandran, Kannan and Martin, Charles H and Mahoney, Michael W},
-  title =        {Evaluating natural language processing models with generalization metrics that do not need access to any training or testing data},
-  number =       {Preprint: arXiv:2202.02842},
-  year =         {2022},
-}
-```
-
-License
-----
-
-MIT
